@@ -26,23 +26,17 @@ const mockRoseWindSlab: AspectElevationRose = {
 const mockProblems: AvalancheProblem[] = [
   {
     id: '1',
-    forecast_id: 'fc1',
-    problem_number: 1,
-    problem_type: 'persistent_slab',
-    aspect_elevation_rose: mockRoseAllHigh,
+    type: 'persistent_slab',
+    aspect_elevation: mockRoseAllHigh,
     likelihood: 'Possible',
     size: 'D2-D3',
-    details: 'A persistent weak layer of facets exists 2-3 feet deep.',
   },
   {
     id: '2',
-    forecast_id: 'fc1',
-    problem_number: 2,
-    problem_type: 'wind_slab',
-    aspect_elevation_rose: mockRoseWindSlab,
+    type: 'wind_slab',
+    aspect_elevation: mockRoseWindSlab,
     likelihood: 'Likely',
     size: 'D1-D2',
-    details: 'Strong SW winds have created wind slabs on NE-E aspects.',
   },
 ];
 

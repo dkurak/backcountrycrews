@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ForecastRow } from '@/components/ForecastRow';
 import { getForecastsWithWeather, isSupabaseConfigured, DBForecast, DBAvalancheProblem, DBWeatherForecast } from '@/lib/supabase';
@@ -49,7 +49,7 @@ function convertForecast(
   };
 }
 
-export default function HistoryPage() {
+function HistoryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -149,5 +149,13 @@ export default function HistoryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12"><p className="text-gray-500">Loading...</p></div>}>
+      <HistoryPageContent />
+    </Suspense>
   );
 }

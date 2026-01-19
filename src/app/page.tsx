@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DangerPyramid } from '@/components/DangerPyramid';
 import { ProblemCard } from '@/components/ProblemCard';
@@ -53,7 +53,8 @@ function convertForecast(
   };
 }
 
-export default function Dashboard() {
+function DashboardContent() {
+  // Inner component that uses useSearchParams
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -334,5 +335,13 @@ export default function Dashboard() {
           : 'Demo mode - Using mock data. Connect Supabase to see real forecasts.'}
       </div>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="text-center py-12"><p className="text-gray-500">Loading...</p></div>}>
+      <DashboardContent />
+    </Suspense>
   );
 }

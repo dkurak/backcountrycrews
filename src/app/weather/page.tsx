@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getWeather, isSupabaseConfigured, DBWeatherForecast } from '@/lib/supabase';
 import { SkyIcon, WindIcon } from '@/components/WeatherIcons';
 import Link from 'next/link';
 
-export default function WeatherPage() {
+function WeatherPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -184,5 +184,13 @@ export default function WeatherPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function WeatherPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12"><p className="text-gray-500">Loading...</p></div>}>
+      <WeatherPageContent />
+    </Suspense>
   );
 }
