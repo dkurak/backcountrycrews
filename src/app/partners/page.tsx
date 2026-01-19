@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, TourPost } from '@/lib/partners';
+import { getTourPosts, TourPost, TourFilters } from '@/lib/partners';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
   beginner: 'Beginner',
@@ -100,16 +100,23 @@ export default function PartnersPage() {
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [timeFrame, setTimeFrame] = useState<'upcoming' | 'past' | 'all'>('upcoming');
+  const [showMyTours, setShowMyTours] = useState(false);
 
   useEffect(() => {
     async function loadPosts() {
       setLoading(true);
-      const data = await getTourPosts(selectedZone || undefined);
+      const filters: TourFilters = {
+        zone: selectedZone || undefined,
+        timeFrame,
+        userId: showMyTours && user ? user.id : undefined,
+      };
+      const data = await getTourPosts(filters);
       setPosts(data);
       setLoading(false);
     }
     loadPosts();
-  }, [selectedZone]);
+  }, [selectedZone, timeFrame, showMyTours, user]);
 
   return (
     <div className="space-y-6">
@@ -138,38 +145,77 @@ export default function PartnersPage() {
         )}
       </div>
 
-      {/* Zone filter */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setSelectedZone(null)}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            selectedZone === null
-              ? 'bg-gray-900 text-white'
-              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          All Zones
-        </button>
-        <button
-          onClick={() => setSelectedZone('southeast')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            selectedZone === 'southeast'
-              ? 'bg-gray-900 text-white'
-              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          Southeast
-        </button>
-        <button
-          onClick={() => setSelectedZone('northwest')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            selectedZone === 'northwest'
-              ? 'bg-gray-900 text-white'
-              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          Northwest
-        </button>
+      {/* Filters */}
+      <div className="space-y-3">
+        {/* Time and My Tours filter */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setTimeFrame('upcoming'); setShowMyTours(false); }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              timeFrame === 'upcoming' && !showMyTours
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Upcoming
+          </button>
+          <button
+            onClick={() => { setTimeFrame('past'); setShowMyTours(false); }}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              timeFrame === 'past' && !showMyTours
+                ? 'bg-gray-900 text-white'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Past
+          </button>
+          {user && (
+            <button
+              onClick={() => { setShowMyTours(true); setTimeFrame('all'); }}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                showMyTours
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              My Tours
+            </button>
+          )}
+        </div>
+
+        {/* Zone filter */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSelectedZone(null)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              selectedZone === null
+                ? 'bg-gray-200 text-gray-900'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            All Zones
+          </button>
+          <button
+            onClick={() => setSelectedZone('southeast')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              selectedZone === 'southeast'
+                ? 'bg-gray-200 text-gray-900'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Southeast
+          </button>
+          <button
+            onClick={() => setSelectedZone('northwest')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              selectedZone === 'northwest'
+                ? 'bg-gray-200 text-gray-900'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Northwest
+          </button>
+        </div>
       </div>
 
       {/* Tour posts list */}
@@ -179,25 +225,37 @@ export default function PartnersPage() {
         </div>
       ) : posts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="text-4xl mb-4">🎿</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No tours posted yet</h3>
+          <div className="text-4xl mb-4">{showMyTours ? '📋' : '🎿'}</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {showMyTours
+              ? 'No tours yet'
+              : timeFrame === 'past'
+              ? 'No past tours'
+              : 'No upcoming tours'}
+          </h3>
           <p className="text-gray-500 mb-4">
-            Be the first to post a tour and find partners!
+            {showMyTours
+              ? "You haven't organized or joined any tours yet."
+              : timeFrame === 'past'
+              ? 'Check upcoming tours to find partners!'
+              : 'Be the first to post a tour and find partners!'}
           </p>
-          {user ? (
-            <Link
-              href="/partners/new"
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Post a Tour
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Sign in to Get Started
-            </Link>
+          {!showMyTours && (
+            user ? (
+              <Link
+                href="/partners/new"
+                className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Post a Tour
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Sign in to Get Started
+              </Link>
+            )
           )}
         </div>
       ) : (

@@ -51,9 +51,19 @@ export interface TourParticipant {
   experience_level: string | null;
 }
 
-// Get all open and full tour posts
-export async function getTourPosts(zone?: string): Promise<TourPost[]> {
+// Filter options for tour posts
+export interface TourFilters {
+  zone?: string;
+  timeFrame?: 'upcoming' | 'past' | 'all';
+  userId?: string; // For "My Tours" - tours user organized or joined
+}
+
+// Get tour posts with filters
+export async function getTourPosts(filters: TourFilters = {}): Promise<TourPost[]> {
   if (!supabase) return [];
+
+  const { zone, timeFrame = 'upcoming', userId } = filters;
+  const today = new Date().toISOString().split('T')[0];
 
   let query = supabase
     .from('tour_posts')
@@ -65,10 +75,18 @@ export async function getTourPosts(zone?: string): Promise<TourPost[]> {
         certifications
       )
     `)
-    .in('status', ['open', 'full'])
-    .gte('tour_date', new Date().toISOString().split('T')[0])
-    .order('tour_date', { ascending: true });
+    .in('status', ['open', 'full', 'completed']);
 
+  // Time frame filter
+  if (timeFrame === 'upcoming') {
+    query = query.gte('tour_date', today).order('tour_date', { ascending: true });
+  } else if (timeFrame === 'past') {
+    query = query.lt('tour_date', today).order('tour_date', { ascending: false });
+  } else {
+    query = query.order('tour_date', { ascending: false });
+  }
+
+  // Zone filter
   if (zone) {
     query = query.eq('zone', zone);
   }
@@ -80,7 +98,24 @@ export async function getTourPosts(zone?: string): Promise<TourPost[]> {
     return [];
   }
 
-  const tours = data as TourPost[];
+  let tours = data as TourPost[];
+
+  // If filtering by user, also get tours they've joined
+  if (userId) {
+    // Get tour IDs where user has accepted response
+    const { data: joinedResponses } = await supabase
+      .from('tour_responses')
+      .select('tour_id')
+      .eq('user_id', userId)
+      .eq('status', 'accepted');
+
+    const joinedTourIds = new Set(joinedResponses?.map(r => r.tour_id) || []);
+
+    // Filter to only tours user organized or joined
+    tours = tours.filter(tour =>
+      tour.user_id === userId || joinedTourIds.has(tour.id)
+    );
+  }
 
   // Get accepted response counts for all tours
   if (tours.length > 0) {
