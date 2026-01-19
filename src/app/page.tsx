@@ -177,9 +177,9 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Danger visualization */}
-        <div className="flex items-center gap-8 mb-6">
-          <div className="text-center">
+        {/* Danger visualization - stacked on mobile, side-by-side on desktop */}
+        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8 mb-6">
+          <div className="text-center flex-shrink-0">
             <DangerPyramid
               alpine={currentForecast.danger_alpine}
               treeline={currentForecast.danger_treeline}
