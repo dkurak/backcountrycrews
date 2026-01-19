@@ -1,10 +1,10 @@
 name: Scrape CBAC Forecasts
 
 on:
-  # Run daily at 7am and 2pm Mountain Time (which is UTC-7, so 2pm and 9pm UTC)
+  # Run daily at 7:15am and 8:00am Mountain Time
   schedule:
-    - cron: '0 14 * * *'  # 7am MT (2pm UTC)
-    - cron: '0 21 * * *'  # 2pm MT (9pm UTC)
+    - cron: '15 14 * * *'  # 7:15am MST / 8:15am MDT
+    - cron: '0 15 * * *'   # 8:00am MST / 9:00am MDT
 
   # Allow manual trigger
   workflow_dispatch:
