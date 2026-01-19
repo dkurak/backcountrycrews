@@ -9,6 +9,7 @@ interface Profile {
   email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  birth_date: string | null;
   experience_level: 'beginner' | 'intermediate' | 'advanced' | 'expert' | null;
   years_experience: number | null;
   certifications: string[] | null;
@@ -19,6 +20,8 @@ interface Profile {
   preferred_zones: string[];
   typical_start_time: string | null;
   fitness_level: 'moderate' | 'fit' | 'very_fit' | 'athlete' | null;
+  travel_method: 'skin' | 'snowmobile' | 'both';
+  preferred_trailheads: string[];
   looking_for_partners: boolean;
   bio: string | null;
   contact_method: 'app' | 'email' | 'phone' | null;
