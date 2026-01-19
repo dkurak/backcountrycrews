@@ -14,6 +14,15 @@ const EXPERIENCE_LEVELS = [
   { value: 'expert', label: 'Expert only' },
 ];
 
+const TRAILHEADS = [
+  { value: 'washington_gulch', label: 'Washington Gulch' },
+  { value: 'snodgrass', label: 'Snodgrass' },
+  { value: 'kebler', label: 'Kebler Pass' },
+  { value: 'brush_creek', label: 'Brush Creek' },
+  { value: 'cement_creek', label: 'Cement Creek' },
+  { value: 'slate_river', label: 'Slate River' },
+];
+
 export default function NewTourPostPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -23,6 +32,8 @@ export default function NewTourPostPage() {
   const [tourDate, setTourDate] = useState('');
   const [tourTime, setTourTime] = useState('');
   const [zone, setZone] = useState('southeast');
+  const [travelMethod, setTravelMethod] = useState<'skin' | 'snowmobile' | 'both'>('skin');
+  const [trailhead, setTrailhead] = useState('');
   const [meetingLocation, setMeetingLocation] = useState('');
   const [experienceRequired, setExperienceRequired] = useState('');
   const [spotsAvailable, setSpotsAvailable] = useState('2');
@@ -77,6 +88,8 @@ export default function NewTourPostPage() {
       tour_date: tourDate,
       tour_time: tourTime || null,
       zone,
+      travel_method: travelMethod,
+      trailhead: trailhead || null,
       meeting_location: meetingLocation.trim() || null,
       experience_required: experienceRequired as 'beginner' | 'intermediate' | 'advanced' | 'expert' | null || null,
       spots_available: parseInt(spotsAvailable) || 2,
@@ -212,6 +225,67 @@ export default function NewTourPostPage() {
               </button>
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Travel Method
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setTravelMethod('skin')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  travelMethod === 'skin'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                Skin
+              </button>
+              <button
+                type="button"
+                onClick={() => setTravelMethod('snowmobile')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  travelMethod === 'snowmobile'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                Snowmobile
+              </button>
+              <button
+                type="button"
+                onClick={() => setTravelMethod('both')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  travelMethod === 'both'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                Both
+              </button>
+            </div>
+          </div>
+
+          {(travelMethod === 'skin' || travelMethod === 'both') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Trailhead
+              </label>
+              <select
+                value={trailhead}
+                onChange={(e) => setTrailhead(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">Select a trailhead...</option>
+                {TRAILHEADS.map((th) => (
+                  <option key={th.value} value={th.value}>
+                    {th.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

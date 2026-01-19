@@ -7,11 +7,13 @@ import { useAuth } from '@/lib/auth';
 import {
   getTourPost,
   getTourResponses,
+  getTourParticipants,
   createTourResponse,
   updateTourResponseStatus,
   deleteTourPost,
   TourPost,
   TourResponse,
+  TourParticipant,
 } from '@/lib/partners';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
@@ -29,6 +31,7 @@ export default function TourPostPage() {
 
   const [post, setPost] = useState<TourPost | null>(null);
   const [responses, setResponses] = useState<TourResponse[]>([]);
+  const [participants, setParticipants] = useState<TourParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,8 +48,12 @@ export default function TourPostPage() {
       setPost(postData);
 
       if (postData) {
-        const responseData = await getTourResponses(postId);
+        const [responseData, participantData] = await Promise.all([
+          getTourResponses(postId),
+          getTourParticipants(postId),
+        ]);
         setResponses(responseData);
+        setParticipants(participantData);
       }
       setLoading(false);
     }
@@ -81,9 +88,13 @@ export default function TourPostPage() {
     const { error: updateError } = await updateTourResponseStatus(responseId, status);
 
     if (!updateError) {
-      // Refresh responses
-      const responseData = await getTourResponses(postId);
+      // Refresh responses and participants
+      const [responseData, participantData] = await Promise.all([
+        getTourResponses(postId),
+        getTourParticipants(postId),
+      ]);
       setResponses(responseData);
+      setParticipants(participantData);
     }
   };
 
@@ -190,9 +201,38 @@ export default function TourPostPage() {
           </div>
           <div>
             <div className="text-xs text-gray-500 uppercase tracking-wide">Spots</div>
-            <div className="font-medium text-gray-900">{post.spots_available} available</div>
+            <div className="font-medium text-gray-900">
+              {participants.length}/{post.spots_available + participants.length} filled
+            </div>
           </div>
         </div>
+
+        {/* Who's Going (visible to logged-in users) */}
+        {user && participants.length > 0 && (
+          <div className="py-4 border-t border-gray-200">
+            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+              Who&apos;s Going ({participants.length})
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {participants.map((participant) => (
+                <div
+                  key={participant.user_id}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full"
+                >
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="text-sm font-medium text-green-800">
+                    {participant.display_name || 'Anonymous'}
+                  </span>
+                  {participant.experience_level && (
+                    <span className="text-xs text-green-600">
+                      ({EXPERIENCE_LABELS[participant.experience_level]})
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Description */}
         {post.description && (

@@ -72,6 +72,7 @@ export default function ProfilePage() {
   const [travelMethod, setTravelMethod] = useState<'skin' | 'snowmobile' | 'both'>('skin');
   const [preferredTrailheads, setPreferredTrailheads] = useState<string[]>([]);
   const [lookingForPartners, setLookingForPartners] = useState(false);
+  const [showOnTours, setShowOnTours] = useState(true);
   const [bio, setBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -93,6 +94,7 @@ export default function ProfilePage() {
       setTravelMethod(profile.travel_method || 'skin');
       setPreferredTrailheads(profile.preferred_trailheads || []);
       setLookingForPartners(profile.looking_for_partners || false);
+      setShowOnTours(profile.show_on_tours !== false);
       setBio(profile.bio || '');
     }
   }, [profile]);
@@ -141,6 +143,7 @@ export default function ProfilePage() {
       travel_method: travelMethod,
       preferred_trailheads: preferredTrailheads,
       looking_for_partners: lookingForPartners,
+      show_on_tours: showOnTours,
       bio: bio || null,
     });
 
@@ -490,20 +493,37 @@ export default function ProfilePage() {
         {/* Partner Finder */}
         <div className="border-t border-gray-200 pt-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Partner Finder</h2>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={lookingForPartners}
-              onChange={(e) => setLookingForPartners(e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <div>
-              <div className="font-medium text-gray-900">I&apos;m looking for touring partners</div>
-              <div className="text-sm text-gray-500">
-                Your profile will be visible to others looking for partners
+          <div className="space-y-4">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={lookingForPartners}
+                onChange={(e) => setLookingForPartners(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div>
+                <div className="font-medium text-gray-900">I&apos;m looking for touring partners</div>
+                <div className="text-sm text-gray-500">
+                  Your profile will be visible to others looking for partners
+                </div>
               </div>
-            </div>
-          </label>
+            </label>
+
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnTours}
+                onChange={(e) => setShowOnTours(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <div>
+                <div className="font-medium text-gray-900">Show my name on tours I join</div>
+                <div className="text-sm text-gray-500">
+                  When you&apos;re accepted to a tour, others can see you&apos;re going
+                </div>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* Save button */}

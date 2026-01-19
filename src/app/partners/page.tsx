@@ -81,9 +81,15 @@ function TourPostCard({ post }: { post: TourPost }) {
           </span>
         )}
 
-        <span className="text-gray-500">
-          {post.spots_available} {post.spots_available === 1 ? 'spot' : 'spots'} available
-        </span>
+        {post.status === 'full' ? (
+          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+            Full
+          </span>
+        ) : (
+          <span className="text-gray-500">
+            {post.accepted_count || 0}/{post.spots_available + (post.accepted_count || 0)} spots filled
+          </span>
+        )}
       </div>
     </Link>
   );
