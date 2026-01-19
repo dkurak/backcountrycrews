@@ -48,7 +48,7 @@ export function Navigation() {
 
             {/* User menu */}
             <div className="ml-2 pl-2 border-l border-gray-700">
-              {loading ? null : user ? (
+              {user ? (
                 <Link
                   href="/profile"
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -106,7 +106,7 @@ export function Navigation() {
 
             {/* User link in mobile menu */}
             <div className="pt-2 mt-2 border-t border-gray-700">
-              {loading ? null : user ? (
+              {user ? (
                 <Link
                   href="/profile"
                   onClick={() => setIsOpen(false)}
