@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, TourPost, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS, ActivityType } from '@/lib/partners';
+import { getTourPosts, getTripsAwaitingResponse, getTripsWithPendingRequests, TourPost, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS, ActivityType } from '@/lib/partners';
 import { getForecastsWithWeather, isSupabaseConfigured, DBForecast, DBAvalancheProblem } from '@/lib/supabase';
 import { DANGER_LABELS } from '@/types/forecast';
 import { DangerPyramid } from '@/components/DangerPyramid';
@@ -15,7 +15,7 @@ interface DangerSummary {
   validDate: string;
 }
 
-function TripCard({ trip }: { trip: TourPost }) {
+function TripCard({ trip, badge }: { trip: TourPost; badge?: { text: string; color: string } }) {
   const tripDate = new Date(trip.tour_date + 'T12:00:00');
   const isToday = new Date().toISOString().split('T')[0] === trip.tour_date;
   const isTomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0] === trip.tour_date;
@@ -32,7 +32,14 @@ function TripCard({ trip }: { trip: TourPost }) {
             {ACTIVITY_ICONS[activity]}
           </span>
           <div className="min-w-0">
-            <h3 className="font-medium text-gray-900 truncate">{trip.title}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-gray-900 truncate">{trip.title}</h3>
+              {badge && (
+                <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+                  {badge.text}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500">
               {trip.zone === 'southeast' ? 'Southeast' : 'Northwest'}
               {trip.profiles?.display_name && ` • ${trip.profiles.display_name}`}
@@ -101,6 +108,8 @@ export default function HomePage() {
   const { user, profile, loading: authLoading } = useAuth();
   const [upcomingTrips, setUpcomingTrips] = useState<TourPost[]>([]);
   const [myTrips, setMyTrips] = useState<TourPost[]>([]);
+  const [awaitingResponse, setAwaitingResponse] = useState<TourPost[]>([]);
+  const [needsAttention, setNeedsAttention] = useState<TourPost[]>([]);
   const [danger, setDanger] = useState<DangerSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -130,12 +139,18 @@ export default function HomePage() {
     loadData();
   }, []);
 
-  // Load user's trips when logged in
+  // Load user's trips and notifications when logged in
   useEffect(() => {
     async function loadMyTrips() {
       if (user) {
-        const trips = await getTourPosts({ timeFrame: 'upcoming', userId: user.id });
+        const [trips, pending, attention] = await Promise.all([
+          getTourPosts({ timeFrame: 'upcoming', userId: user.id }),
+          getTripsAwaitingResponse(user.id),
+          getTripsWithPendingRequests(user.id),
+        ]);
         setMyTrips(trips.slice(0, 3));
+        setAwaitingResponse(pending);
+        setNeedsAttention(attention);
       }
     }
     loadMyTrips();
@@ -197,6 +212,49 @@ export default function HomePage() {
 
       {/* Avalanche Banner */}
       <AvalancheBanner danger={danger} />
+
+      {/* Needs Attention - trips you organize with pending requests */}
+      {user && needsAttention.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">🔔</span>
+            <h2 className="text-lg font-semibold text-amber-900">Needs Your Attention</h2>
+          </div>
+          <div className="space-y-2">
+            {needsAttention.map((trip) => (
+              <TripCard
+                key={trip.id}
+                trip={trip}
+                badge={{
+                  text: `${trip.pending_count} pending`,
+                  color: 'bg-amber-100 text-amber-700',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Awaiting Response - trips you expressed interest in */}
+      {user && awaitingResponse.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">Awaiting Response</h2>
+          </div>
+          <div className="space-y-2">
+            {awaitingResponse.map((trip) => (
+              <TripCard
+                key={trip.id}
+                trip={trip}
+                badge={{
+                  text: 'Pending',
+                  color: 'bg-yellow-100 text-yellow-700',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* My Upcoming Trips (logged in) */}
       {user && myTrips.length > 0 && (

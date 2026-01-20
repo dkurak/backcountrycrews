@@ -71,6 +71,8 @@ export interface TourPost {
   };
   // Computed: count of accepted responses
   accepted_count?: number;
+  // Computed: count of pending responses (for organizers)
+  pending_count?: number;
 }
 
 export interface TourResponse {
@@ -215,6 +217,115 @@ export async function getTourPosts(filters: TourFilters = {}): Promise<TourPost[
     }
 
     return tours;
+  };
+
+  return withTimeout(fetchData(), 10000, []);
+}
+
+// Get trips where user has pending interest (awaiting response from organizer)
+export async function getTripsAwaitingResponse(userId: string): Promise<TourPost[]> {
+  if (!supabase) return [];
+  const client = supabase;
+
+  const fetchData = async (): Promise<TourPost[]> => {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get tour IDs where user has pending response
+    const { data: pendingResponses, error: responseError } = await client
+      .from('tour_responses')
+      .select('tour_id')
+      .eq('user_id', userId)
+      .eq('status', 'pending');
+
+    if (responseError || !pendingResponses?.length) {
+      return [];
+    }
+
+    const tourIds = pendingResponses.map(r => r.tour_id);
+
+    // Get the tour posts
+    const { data, error } = await client
+      .from('tour_posts')
+      .select(`
+        *,
+        profiles (
+          display_name,
+          experience_level,
+          certifications
+        )
+      `)
+      .in('id', tourIds)
+      .gte('tour_date', today)
+      .in('status', ['open', 'full'])
+      .order('tour_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching pending trips:', error);
+      return [];
+    }
+
+    return data as TourPost[];
+  };
+
+  return withTimeout(fetchData(), 10000, []);
+}
+
+// Get trips user organizes that have pending requests
+export async function getTripsWithPendingRequests(userId: string): Promise<TourPost[]> {
+  if (!supabase) return [];
+  const client = supabase;
+
+  const fetchData = async (): Promise<TourPost[]> => {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Get user's upcoming trips
+    const { data: trips, error: tripsError } = await client
+      .from('tour_posts')
+      .select(`
+        *,
+        profiles (
+          display_name,
+          experience_level,
+          certifications
+        )
+      `)
+      .eq('user_id', userId)
+      .gte('tour_date', today)
+      .in('status', ['open', 'full'])
+      .order('tour_date', { ascending: true });
+
+    if (tripsError || !trips?.length) {
+      return [];
+    }
+
+    const tourIds = trips.map(t => t.id);
+
+    // Get pending response counts
+    const { data: responses } = await client
+      .from('tour_responses')
+      .select('tour_id')
+      .in('tour_id', tourIds)
+      .eq('status', 'pending');
+
+    if (!responses?.length) {
+      return [];
+    }
+
+    // Count pending responses per tour
+    const countMap: Record<string, number> = {};
+    responses.forEach(r => {
+      countMap[r.tour_id] = (countMap[r.tour_id] || 0) + 1;
+    });
+
+    // Filter to trips with pending requests and add counts
+    const tripsWithPending = (trips as TourPost[])
+      .filter(tour => countMap[tour.id] > 0)
+      .map(tour => ({
+        ...tour,
+        pending_count: countMap[tour.id],
+      }));
+
+    return tripsWithPending;
   };
 
   return withTimeout(fetchData(), 10000, []);
