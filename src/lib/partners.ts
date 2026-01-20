@@ -13,6 +13,35 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: 
   }
 }
 
+export type ActivityType = 'ski_tour' | 'offroad' | 'mountain_bike' | 'trail_run' | 'hike' | 'climb';
+
+export const ACTIVITY_LABELS: Record<ActivityType, string> = {
+  ski_tour: 'Ski Tour',
+  offroad: 'Offroad',
+  mountain_bike: 'Mountain Bike',
+  trail_run: 'Trail Run',
+  hike: 'Hike',
+  climb: 'Climb',
+};
+
+export const ACTIVITY_COLORS: Record<ActivityType, string> = {
+  ski_tour: 'bg-blue-100 text-blue-700',
+  offroad: 'bg-orange-100 text-orange-700',
+  mountain_bike: 'bg-green-100 text-green-700',
+  trail_run: 'bg-purple-100 text-purple-700',
+  hike: 'bg-yellow-100 text-yellow-700',
+  climb: 'bg-red-100 text-red-700',
+};
+
+export const ACTIVITY_ICONS: Record<ActivityType, string> = {
+  ski_tour: '⛷️',
+  offroad: '🚙',
+  mountain_bike: '🚵',
+  trail_run: '🏃',
+  hike: '🥾',
+  climb: '🧗',
+};
+
 export interface TourPost {
   id: string;
   user_id: string;
@@ -21,6 +50,7 @@ export interface TourPost {
   tour_date: string;
   tour_time: string | null;
   zone: string;
+  region: string | null;
   trailhead: string | null;
   travel_method: 'skin' | 'snowmobile' | 'both' | null;
   meeting_location: string | null;
@@ -28,6 +58,8 @@ export interface TourPost {
   spots_available: number;
   gear_requirements: string[] | null;
   status: 'open' | 'confirmed' | 'full' | 'cancelled' | 'completed';
+  activity: ActivityType;
+  activity_details: Record<string, unknown> | null;
   planning_notes: string | null;
   created_at: string;
   updated_at: string;
@@ -88,6 +120,7 @@ export interface TourMessage {
 // Filter options for tour posts
 export interface TourFilters {
   zone?: string;
+  activity?: ActivityType;
   timeFrame?: 'upcoming' | 'past' | 'all';
   userId?: string; // For "My Tours" - tours user organized or joined
 }
@@ -98,7 +131,7 @@ export async function getTourPosts(filters: TourFilters = {}): Promise<TourPost[
   const client = supabase;
 
   const fetchData = async (): Promise<TourPost[]> => {
-    const { zone, timeFrame = 'upcoming', userId } = filters;
+    const { zone, activity, timeFrame = 'upcoming', userId } = filters;
     const today = new Date().toISOString().split('T')[0];
 
     let query = client
@@ -125,6 +158,11 @@ export async function getTourPosts(filters: TourFilters = {}): Promise<TourPost[
     // Zone filter
     if (zone) {
       query = query.eq('zone', zone);
+    }
+
+    // Activity filter
+    if (activity) {
+      query = query.eq('activity', activity);
     }
 
     const { data, error } = await query;

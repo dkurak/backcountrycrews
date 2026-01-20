@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { createTourPost } from '@/lib/partners';
+import { createTourPost, ActivityType, ACTIVITY_LABELS, ACTIVITY_ICONS, ACTIVITY_COLORS } from '@/lib/partners';
 import { getTrailheads, Trailhead } from '@/lib/trailheads';
+
+const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
 
 const EXPERIENCE_LEVELS = [
   { value: '', label: 'Any level welcome' },
@@ -21,6 +23,7 @@ export default function NewTourPostPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
+  const [activity, setActivity] = useState<ActivityType>('ski_tour');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tourDate, setTourDate] = useState('');
@@ -78,10 +81,17 @@ export default function NewTourPostPage() {
 
     setIsSubmitting(true);
 
+    // Gear requirements - only for ski_tour
     const gearRequirements: string[] = [];
-    if (requireBeacon) gearRequirements.push('Beacon');
-    if (requireProbe) gearRequirements.push('Probe');
-    if (requireShovel) gearRequirements.push('Shovel');
+    if (activity === 'ski_tour') {
+      if (requireBeacon) gearRequirements.push('Beacon');
+      if (requireProbe) gearRequirements.push('Probe');
+      if (requireShovel) gearRequirements.push('Shovel');
+    } else if (activity === 'mountain_bike') {
+      gearRequirements.push('Helmet');
+    } else if (activity === 'offroad') {
+      gearRequirements.push('Recovery gear');
+    }
 
     // Use custom trailhead text if "Other" was selected
     const finalTrailhead = trailhead === '_other'
@@ -94,12 +104,15 @@ export default function NewTourPostPage() {
       tour_date: tourDate,
       tour_time: tourTime || null,
       zone,
-      travel_method: travelMethod,
+      region: null,
+      travel_method: activity === 'ski_tour' ? travelMethod : null,
       trailhead: finalTrailhead,
       meeting_location: meetingLocation.trim() || null,
       experience_required: experienceRequired as 'beginner' | 'intermediate' | 'advanced' | 'expert' | null || null,
       spots_available: parseInt(spotsAvailable) || 2,
       gear_requirements: gearRequirements.length > 0 ? gearRequirements : null,
+      activity,
+      activity_details: null,
     });
 
     if (createError) {
@@ -142,9 +155,35 @@ export default function NewTourPostPage() {
           </div>
         )}
 
+        {/* Activity type selector */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Activity Type *
+          </label>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {ALL_ACTIVITIES.map((act) => (
+              <button
+                key={act}
+                type="button"
+                onClick={() => setActivity(act)}
+                className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-colors ${
+                  activity === act
+                    ? `${ACTIVITY_COLORS[act]} border-current`
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                }`}
+              >
+                <span className="text-xl">{ACTIVITY_ICONS[act]}</span>
+                <span className="text-xs font-medium">{ACTIVITY_LABELS[act]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Tour details card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Tour Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {ACTIVITY_LABELS[activity]} Details
+          </h2>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -232,48 +271,50 @@ export default function NewTourPostPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Travel Method
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setTravelMethod('skin')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  travelMethod === 'skin'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                Skin
-              </button>
-              <button
-                type="button"
-                onClick={() => setTravelMethod('snowmobile')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  travelMethod === 'snowmobile'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                Snowmobile
-              </button>
-              <button
-                type="button"
-                onClick={() => setTravelMethod('both')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  travelMethod === 'both'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                Both
-              </button>
+          {activity === 'ski_tour' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Travel Method
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTravelMethod('skin')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    travelMethod === 'skin'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Skin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTravelMethod('snowmobile')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    travelMethod === 'snowmobile'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Snowmobile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTravelMethod('both')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    travelMethod === 'both'
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Both
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {(travelMethod === 'skin' || travelMethod === 'both') && (
+          {activity === 'ski_tour' && (travelMethod === 'skin' || travelMethod === 'both') && (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Trailhead
@@ -362,40 +403,42 @@ export default function NewTourPostPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Required Gear
-            </label>
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={requireBeacon}
-                  onChange={(e) => setRequireBeacon(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-gray-700">Beacon</span>
+          {activity === 'ski_tour' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Required Avalanche Gear
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={requireProbe}
-                  onChange={(e) => setRequireProbe(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-gray-700">Probe</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={requireShovel}
-                  onChange={(e) => setRequireShovel(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-gray-700">Shovel</span>
-              </label>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={requireBeacon}
+                    onChange={(e) => setRequireBeacon(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Beacon</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={requireProbe}
+                    onChange={(e) => setRequireProbe(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Probe</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={requireShovel}
+                    onChange={(e) => setRequireShovel(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-gray-700">Shovel</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Submit */}

@@ -21,6 +21,9 @@ import {
   TourParticipant,
   TourParticipantWithContact,
   TourMessage,
+  ACTIVITY_LABELS,
+  ACTIVITY_COLORS,
+  ACTIVITY_ICONS,
 } from '@/lib/partners';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
@@ -241,7 +244,13 @@ export default function TourPostPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium ${ACTIVITY_COLORS[post.activity || 'ski_tour']}`}>
+                <span>{ACTIVITY_ICONS[post.activity || 'ski_tour']}</span>
+                {ACTIVITY_LABELS[post.activity || 'ski_tour']}
+              </span>
+              <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>
+            </div>
             <p className="text-gray-500 mt-1">
               Posted by{' '}
               <Link

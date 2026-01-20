@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, TourPost, TourFilters } from '@/lib/partners';
+import { getTourPosts, TourPost, TourFilters, ActivityType, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
   beginner: 'Beginner',
@@ -12,10 +12,13 @@ const EXPERIENCE_LABELS: Record<string, string> = {
   expert: 'Expert',
 };
 
+const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
+
 function TourPostCard({ post }: { post: TourPost }) {
   const tourDate = new Date(post.tour_date + 'T12:00:00');
   const isToday = new Date().toISOString().split('T')[0] === post.tour_date;
   const isTomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0] === post.tour_date;
+  const activity = post.activity || 'ski_tour';
 
   return (
     <Link
@@ -24,7 +27,13 @@ function TourPostCard({ post }: { post: TourPost }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${ACTIVITY_COLORS[activity]}`}>
+              <span>{ACTIVITY_ICONS[activity]}</span>
+              {ACTIVITY_LABELS[activity]}
+            </span>
+            <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
+          </div>
           <p className="text-sm text-gray-500 mt-1">
             Posted by {post.profiles?.display_name || 'Anonymous'}
             {post.profiles?.experience_level && (
@@ -100,6 +109,7 @@ export default function PartnersPage() {
   const [posts, setPosts] = useState<TourPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityType | null>(null);
   const [timeFrame, setTimeFrame] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [showMyTours, setShowMyTours] = useState(false);
 
@@ -108,6 +118,7 @@ export default function PartnersPage() {
       setLoading(true);
       const filters: TourFilters = {
         zone: selectedZone || undefined,
+        activity: selectedActivity || undefined,
         timeFrame,
         userId: showMyTours && user ? user.id : undefined,
       };
@@ -116,7 +127,7 @@ export default function PartnersPage() {
       setLoading(false);
     }
     loadPosts();
-  }, [selectedZone, timeFrame, showMyTours, user]);
+  }, [selectedZone, selectedActivity, timeFrame, showMyTours, user]);
 
   return (
     <div className="space-y-6">
@@ -186,8 +197,22 @@ export default function PartnersPage() {
           Past
         </button>
 
-        {/* Zone dropdown */}
-        <div className="ml-auto">
+        {/* Activity dropdown */}
+        <div className="ml-auto flex gap-2">
+          <select
+            value={selectedActivity || ''}
+            onChange={(e) => setSelectedActivity((e.target.value || null) as ActivityType | null)}
+            className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Activities</option>
+            {ALL_ACTIVITIES.map((act) => (
+              <option key={act} value={act}>
+                {ACTIVITY_ICONS[act]} {ACTIVITY_LABELS[act]}
+              </option>
+            ))}
+          </select>
+
+          {/* Zone dropdown */}
           <select
             value={selectedZone || ''}
             onChange={(e) => setSelectedZone(e.target.value || null)}
