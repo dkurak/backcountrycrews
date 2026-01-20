@@ -6,10 +6,9 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/avalanche', label: 'Avalanche' },
-  { href: '/weather', label: 'Weather' },
+  { href: '/forecast', label: 'Forecast' },
   { href: '/trips', label: 'Trips' },
+  { href: '/partners', label: 'Partners' },
 ];
 
 export function Navigation() {
@@ -18,7 +17,6 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
 
