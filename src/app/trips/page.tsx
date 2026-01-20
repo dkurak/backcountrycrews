@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, TourPost, TourFilters, ActivityType, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getTourPosts, getTripsWithPendingRequests, TourPost, TourFilters, ActivityType, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
   beginner: 'Beginner',
@@ -14,7 +14,7 @@ const EXPERIENCE_LABELS: Record<string, string> = {
 
 const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
 
-function TourPostCard({ post }: { post: TourPost }) {
+function TourPostCard({ post, pendingCount }: { post: TourPost; pendingCount?: number }) {
   const tourDate = new Date(post.tour_date + 'T12:00:00');
   const isToday = new Date().toISOString().split('T')[0] === post.tour_date;
   const isTomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0] === post.tour_date;
@@ -27,12 +27,17 @@ function TourPostCard({ post }: { post: TourPost }) {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${ACTIVITY_COLORS[activity]}`}>
               <span>{ACTIVITY_ICONS[activity]}</span>
               {ACTIVITY_LABELS[activity]}
             </span>
             <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
+            {pendingCount && pendingCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                {pendingCount} pending
+              </span>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-1">
             Posted by {post.profiles?.display_name || 'Anonymous'}
@@ -112,6 +117,7 @@ export default function PartnersPage() {
   const [selectedActivity, setSelectedActivity] = useState<ActivityType | null>(null);
   const [timeFrame, setTimeFrame] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [showMyTours, setShowMyTours] = useState(false);
+  const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function loadPosts() {
@@ -128,6 +134,23 @@ export default function PartnersPage() {
     }
     loadPosts();
   }, [selectedZone, selectedActivity, timeFrame, showMyTours, user]);
+
+  // Load pending counts for trips the user organizes
+  useEffect(() => {
+    async function loadPendingCounts() {
+      if (user) {
+        const tripsWithPending = await getTripsWithPendingRequests(user.id);
+        const counts: Record<string, number> = {};
+        tripsWithPending.forEach((trip) => {
+          if (trip.pending_count) {
+            counts[trip.id] = trip.pending_count;
+          }
+        });
+        setPendingCounts(counts);
+      }
+    }
+    loadPendingCounts();
+  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -268,7 +291,7 @@ export default function PartnersPage() {
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
-            <TourPostCard key={post.id} post={post} />
+            <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} />
           ))}
         </div>
       )}
