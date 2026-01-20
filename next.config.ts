@@ -1,26 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Redirect old /partners URLs to /trips
-  async redirects() {
-    return [
-      {
-        source: '/partners',
-        destination: '/trips',
-        permanent: true,
-      },
-      {
-        source: '/partners/new',
-        destination: '/trips/new',
-        permanent: true,
-      },
-      {
-        source: '/partners/:id',
-        destination: '/trips/:id',
-        permanent: true,
-      },
-    ];
-  },
   // Add cache control headers
   async headers() {
     return [
