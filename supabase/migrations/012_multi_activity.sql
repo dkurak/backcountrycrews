@@ -346,8 +346,9 @@ BEGIN
       -- Get random users excluding organizer
       SELECT ARRAY_AGG(u) INTO random_users
       FROM (
-        SELECT unnest(user_ids) as u
-        WHERE unnest(user_ids) != user_id
+        SELECT u
+        FROM unnest(user_ids) as u
+        WHERE u != user_id
         ORDER BY random()
         LIMIT num_responses
       ) sub;
