@@ -278,7 +278,7 @@ BEGIN
         END,
         trip_date::date,
         (ARRAY['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM', '5:30 PM', '6:30 AM', 'Dawn'])[floor(random() * 7 + 1)],
-        CASE WHEN activity = 'ski_tour' THEN (ARRAY['northwest', 'southeast'])[floor(random() * 2 + 1)] ELSE NULL END,
+        (ARRAY['northwest', 'southeast'])[floor(random() * 2 + 1)],
         CASE activity
           WHEN 'offroad' THEN (ARRAY['Crested Butte', 'Taylor Park', 'Moab', 'Pitkin'])[floor(random() * 4 + 1)]
           WHEN 'ski_tour' THEN 'Crested Butte'
