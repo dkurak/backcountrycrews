@@ -35,7 +35,7 @@ export const ACTIVITY_COLORS: Record<ActivityType, string> = {
 
 export const ACTIVITY_ICONS: Record<ActivityType, string> = {
   ski_tour: '⛷️',
-  offroad: '🚙',
+  offroad: '🛻',
   mountain_bike: '🚵',
   trail_run: '🏃',
   hike: '🥾',
