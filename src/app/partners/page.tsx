@@ -41,18 +41,18 @@ function ExperienceIcon({ level, size = 'sm' }: { level: ExperienceLevel; size?:
         </svg>
       );
     case 'advanced':
-      // Black diamond
+      // Black diamond (white fill for visibility on dark bg)
       return (
-        <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2L22 12L12 22L2 12L12 2Z" className="text-gray-900" />
+        <svg className={sizeClass} viewBox="0 0 24 24" fill="white">
+          <path d="M12 2L22 12L12 22L2 12L12 2Z" />
         </svg>
       );
     case 'expert':
-      // Double black diamond
+      // Double black diamond (white fill for visibility on dark bg)
       return (
-        <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
-          <path d="M7 2L12 7L7 12L2 7L7 2Z" className="text-gray-900" />
-          <path d="M17 12L22 17L17 22L12 17L17 12Z" className="text-gray-900" />
+        <svg className={sizeClass} viewBox="0 0 24 24" fill="white">
+          <path d="M7 2L12 7L7 12L2 7L7 2Z" />
+          <path d="M17 12L22 17L17 22L12 17L17 12Z" />
         </svg>
       );
   }
