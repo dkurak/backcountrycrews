@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 const navItems = [
-  { href: '/', label: 'Forecast' },
-  { href: '/history', label: 'History' },
+  { href: '/', label: 'Home' },
+  { href: '/avalanche', label: 'Avalanche' },
   { href: '/weather', label: 'Weather' },
   { href: '/trips', label: 'Trips' },
 ];
