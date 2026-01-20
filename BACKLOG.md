@@ -32,6 +32,16 @@ _Features prioritized for upcoming work_
 
 ### User Features
 
+- [ ] **Invite Users to Tour**
+  - Tour organizers can invite specific people to their tour
+  - Finding users to invite:
+    - Quick list of past tour partners (people you've toured with before)
+    - Browse users marked "Looking for partners"
+    - Search all users by name/email
+  - Invited user sees invite in-app (profile/dashboard)
+  - Invitee can accept or decline (like organizer accepting requests)
+  - Notification: in-app only (no email for now)
+
 - [ ] **Comments on Forecasts**
   - Allow users to comment on daily forecasts
   - Share observations, conditions reports
