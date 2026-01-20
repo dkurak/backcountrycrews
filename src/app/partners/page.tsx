@@ -5,12 +5,58 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { getPartnersLooking } from '@/lib/partners';
 
-const EXPERIENCE_LABELS: Record<string, string> = {
+type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+const EXPERIENCE_LABELS: Record<ExperienceLevel, string> = {
   beginner: 'Beginner',
   intermediate: 'Intermediate',
   advanced: 'Advanced',
   expert: 'Expert',
 };
+
+const EXPERIENCE_COLORS: Record<ExperienceLevel, string> = {
+  beginner: 'bg-green-100 text-green-700',
+  intermediate: 'bg-blue-100 text-blue-700',
+  advanced: 'bg-gray-900 text-white',
+  expert: 'bg-gray-900 text-white',
+};
+
+// Ski trail difficulty icons
+function ExperienceIcon({ level, size = 'sm' }: { level: ExperienceLevel; size?: 'sm' | 'lg' }) {
+  const sizeClass = size === 'lg' ? 'w-5 h-5' : 'w-4 h-4';
+
+  switch (level) {
+    case 'beginner':
+      // Green circle
+      return (
+        <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10" className="text-green-500" />
+        </svg>
+      );
+    case 'intermediate':
+      // Blue square
+      return (
+        <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
+          <rect x="2" y="2" width="20" height="20" className="text-blue-500" />
+        </svg>
+      );
+    case 'advanced':
+      // Black diamond
+      return (
+        <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2L22 12L12 22L2 12L12 2Z" className="text-gray-900" />
+        </svg>
+      );
+    case 'expert':
+      // Double black diamond
+      return (
+        <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 2L12 7L7 12L2 7L7 2Z" className="text-gray-900" />
+          <path d="M17 12L22 17L17 22L12 17L17 12Z" className="text-gray-900" />
+        </svg>
+      );
+  }
+}
 
 const FITNESS_LABELS: Record<string, string> = {
   moderate: 'Moderate',
@@ -18,6 +64,8 @@ const FITNESS_LABELS: Record<string, string> = {
   very_fit: 'Very Fit',
   athlete: 'Athlete',
 };
+
+const ALL_EXPERIENCE_LEVELS: ExperienceLevel[] = ['beginner', 'intermediate', 'advanced', 'expert'];
 
 interface Partner {
   id: string;
@@ -34,6 +82,7 @@ interface Partner {
 
 function PartnerCard({ partner }: { partner: Partner }) {
   const hasFullGear = partner.has_beacon && partner.has_probe && partner.has_shovel;
+  const expLevel = partner.experience_level as ExperienceLevel | null;
 
   return (
     <Link
@@ -58,10 +107,13 @@ function PartnerCard({ partner }: { partner: Partner }) {
 
           {/* Experience and fitness */}
           <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500">
-            {partner.experience_level && (
-              <span>{EXPERIENCE_LABELS[partner.experience_level]}</span>
+            {expLevel && (
+              <span className="flex items-center gap-1">
+                <ExperienceIcon level={expLevel} />
+                {EXPERIENCE_LABELS[expLevel]}
+              </span>
             )}
-            {partner.experience_level && partner.fitness_level && (
+            {expLevel && partner.fitness_level && (
               <span className="text-gray-300">|</span>
             )}
             {partner.fitness_level && (
@@ -113,7 +165,7 @@ export default function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
-  const [selectedExperience, setSelectedExperience] = useState<string | null>(null);
+  const [selectedExperience, setSelectedExperience] = useState<Set<ExperienceLevel>>(new Set());
 
   useEffect(() => {
     async function loadPartners() {
@@ -125,10 +177,32 @@ export default function PartnersPage() {
     loadPartners();
   }, [selectedZone]);
 
-  // Filter by experience level client-side
-  const filteredPartners = selectedExperience
-    ? partners.filter((p) => p.experience_level === selectedExperience)
-    : partners;
+  // Count partners by experience level
+  const experienceCounts = partners.reduce((acc, p) => {
+    const level = p.experience_level as ExperienceLevel;
+    if (level) {
+      acc[level] = (acc[level] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<ExperienceLevel, number>);
+
+  // Toggle experience level selection
+  const toggleExperience = (level: ExperienceLevel) => {
+    setSelectedExperience((prev) => {
+      const next = new Set(prev);
+      if (next.has(level)) {
+        next.delete(level);
+      } else {
+        next.add(level);
+      }
+      return next;
+    });
+  };
+
+  // Filter by experience level client-side (multi-select)
+  const filteredPartners = selectedExperience.size === 0
+    ? partners
+    : partners.filter((p) => selectedExperience.has(p.experience_level as ExperienceLevel));
 
   return (
     <div className="space-y-6">
@@ -157,9 +231,8 @@ export default function PartnersPage() {
         )}
       </div>
 
-      {/* Filters */}
+      {/* Zone filter */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Zone filter */}
         <select
           value={selectedZone || ''}
           onChange={(e) => setSelectedZone(e.target.value || null)}
@@ -169,20 +242,40 @@ export default function PartnersPage() {
           <option value="southeast">Southeast</option>
           <option value="northwest">Northwest</option>
         </select>
-
-        {/* Experience filter */}
-        <select
-          value={selectedExperience || ''}
-          onChange={(e) => setSelectedExperience(e.target.value || null)}
-          className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Experience Levels</option>
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
-          <option value="expert">Expert</option>
-        </select>
       </div>
+
+      {/* Experience Level Filter Cards */}
+      {partners.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="text-sm text-gray-600 mb-3">
+            Experience Level ({partners.length} total){selectedExperience.size > 0 && ` · ${filteredPartners.length} selected`}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_EXPERIENCE_LEVELS.map((level) => {
+              const count = experienceCounts[level] || 0;
+              if (count === 0) return null;
+              const isSelected = selectedExperience.has(level);
+              return (
+                <button
+                  key={level}
+                  onClick={() => toggleExperience(level)}
+                  className={`px-3 py-2 rounded-lg text-left transition-all flex items-center gap-2 ${
+                    isSelected
+                      ? `${EXPERIENCE_COLORS[level]} ring-2 ring-offset-1 ring-gray-400`
+                      : `${EXPERIENCE_COLORS[level]} opacity-70 hover:opacity-100`
+                  }`}
+                >
+                  <ExperienceIcon level={level} size="lg" />
+                  <div>
+                    <div className="text-xs font-medium">{EXPERIENCE_LABELS[level]}</div>
+                    <div className="text-lg font-bold">{count}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Partners list */}
       {loading ? (
@@ -194,7 +287,7 @@ export default function PartnersPage() {
           <div className="text-4xl mb-4">🔍</div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No partners found</h3>
           <p className="text-gray-500 mb-4">
-            {selectedZone || selectedExperience
+            {selectedZone || selectedExperience.size > 0
               ? 'Try adjusting your filters to find more partners.'
               : 'No one is currently looking for partners. Check back later!'}
           </p>
