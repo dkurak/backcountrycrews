@@ -108,11 +108,10 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
     currentForecast.danger_below_treeline
   );
 
+  const previousForecast = forecasts[1];
+
   return (
     <div className="space-y-6">
-      {/* Quick Take - Primary actionable summary */}
-      <QuickTake forecast={currentForecast} />
-
       {/* Current Forecast Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-start justify-between mb-4">
@@ -145,6 +144,11 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
           >
             {DANGER_LABELS[maxDanger as 1 | 2 | 3 | 4 | 5]}
           </div>
+        </div>
+
+        {/* Quick Take - compact version */}
+        <div className="mb-4">
+          <QuickTake forecast={currentForecast} previousForecast={previousForecast} compact />
         </div>
 
         {/* Danger visualization - stacked on mobile, side-by-side on desktop */}

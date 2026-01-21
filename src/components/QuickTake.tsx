@@ -1,9 +1,67 @@
 'use client';
 
-import { Forecast, ForecastTrend, TREND_LABELS, TREND_COLORS, DANGER_LABELS, DangerLevel } from '@/types/forecast';
+import { Forecast, AvalancheProblem, ForecastTrend, TREND_LABELS, TREND_COLORS, DANGER_LABELS, DangerLevel } from '@/types/forecast';
 
 interface QuickTakeProps {
   forecast: Forecast;
+  previousForecast?: Forecast;
+  compact?: boolean; // Smaller version for embedding
+}
+
+// Count active cells in aspect/elevation rose
+function countActiveCells(rose: AvalancheProblem['aspect_elevation']): number {
+  let count = 0;
+  const aspects = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
+  const elevations = ['alpine', 'treeline', 'below_treeline'] as const;
+
+  for (const aspect of aspects) {
+    for (const elev of elevations) {
+      if (rose[aspect]?.[elev]) count++;
+    }
+  }
+  return count;
+}
+
+// Calculate total problem coverage across all problems
+function getTotalProblemCoverage(problems: AvalancheProblem[]): number {
+  return problems.reduce((sum, p) => sum + countActiveCells(p.aspect_elevation), 0);
+}
+
+// Calculate trend by comparing to previous forecast
+function calculateTrend(current: Forecast, previous?: Forecast): ForecastTrend | undefined {
+  if (!previous) return undefined;
+
+  const currentMaxDanger = Math.max(
+    current.danger_alpine,
+    current.danger_treeline,
+    current.danger_below_treeline
+  );
+  const previousMaxDanger = Math.max(
+    previous.danger_alpine,
+    previous.danger_treeline,
+    previous.danger_below_treeline
+  );
+
+  // Check for new problem types
+  const currentTypes = new Set(current.problems.map(p => p.type));
+  const previousTypes = new Set(previous.problems.map(p => p.type));
+  const hasNewProblemType = [...currentTypes].some(t => !previousTypes.has(t));
+
+  // Calculate problem coverage
+  const currentCoverage = getTotalProblemCoverage(current.problems);
+  const previousCoverage = getTotalProblemCoverage(previous.problems);
+
+  // Worsening: danger increased, or new problem type, or significantly more coverage
+  if (currentMaxDanger > previousMaxDanger) return 'worsening';
+  if (hasNewProblemType) return 'new_problem';
+  if (currentCoverage > previousCoverage * 1.25) return 'worsening';
+
+  // Improving: danger decreased, or problem resolved, or significantly less coverage
+  if (currentMaxDanger < previousMaxDanger) return 'improving';
+  if (current.problems.length < previous.problems.length) return 'improving';
+  if (currentCoverage < previousCoverage * 0.75) return 'improving';
+
+  return 'steady';
 }
 
 // Generate quick take bullets from forecast data
@@ -92,8 +150,9 @@ function getTrendIcon(trend: ForecastTrend | undefined): string {
   }
 }
 
-export function QuickTake({ forecast }: QuickTakeProps) {
+export function QuickTake({ forecast, previousForecast, compact = false }: QuickTakeProps) {
   const bullets = generateQuickTake(forecast);
+  const trend = calculateTrend(forecast, previousForecast);
   const maxDanger = Math.max(
     forecast.danger_alpine,
     forecast.danger_treeline,
@@ -116,21 +175,50 @@ export function QuickTake({ forecast }: QuickTakeProps) {
                       maxDanger === 2 ? 'text-yellow-700' :
                       'text-green-600';
 
+  if (compact) {
+    return (
+      <div className={`rounded-lg border p-3 ${bgColor}`}>
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`text-sm font-semibold ${textColor}`}>Quick Take</span>
+          {trend && trend !== 'steady' && (
+            <span
+              className="px-1.5 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                backgroundColor: TREND_COLORS[trend] + '20',
+                color: TREND_COLORS[trend],
+              }}
+            >
+              {getTrendIcon(trend)} {TREND_LABELS[trend]}
+            </span>
+          )}
+        </div>
+        <ul className="space-y-1">
+          {bullets.map((bullet, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm">
+              <span className={`font-bold ${bulletColor}`}>•</span>
+              <span className={textColor}>{bullet}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <div className={`rounded-xl border-2 p-4 ${bgColor}`}>
       <div className="flex items-center justify-between mb-3">
         <h3 className={`font-bold text-lg ${textColor}`}>
           Quick Take
         </h3>
-        {forecast.trend && (
+        {trend && trend !== 'steady' && (
           <span
             className="px-2 py-1 rounded-full text-xs font-medium"
             style={{
-              backgroundColor: TREND_COLORS[forecast.trend] + '20',
-              color: TREND_COLORS[forecast.trend],
+              backgroundColor: TREND_COLORS[trend] + '20',
+              color: TREND_COLORS[trend],
             }}
           >
-            {getTrendIcon(forecast.trend)} {TREND_LABELS[forecast.trend]}
+            {getTrendIcon(trend)} {TREND_LABELS[trend]}
           </span>
         )}
       </div>
