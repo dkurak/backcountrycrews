@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, getTripsWithPendingRequests, TourPost, TourFilters, ActivityType, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
   beginner: 'Beginner',
@@ -11,6 +11,76 @@ const EXPERIENCE_LABELS: Record<string, string> = {
   advanced: 'Advanced',
   expert: 'Expert',
 };
+
+// Get the Monday of a week for a given date
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Get week label based on date
+function getWeekLabel(weekStart: Date): string {
+  const now = new Date();
+  const thisWeekStart = getWeekStart(now);
+  const nextWeekStart = new Date(thisWeekStart);
+  nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+
+  if (weekStart.getTime() === thisWeekStart.getTime()) {
+    return 'This Week';
+  }
+  if (weekStart.getTime() === nextWeekStart.getTime()) {
+    return 'Next Week';
+  }
+
+  // Format as "Jan 27 - Feb 2"
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short' });
+  const endMonth = weekEnd.toLocaleDateString('en-US', { month: 'short' });
+  const startDay = weekStart.getDate();
+  const endDay = weekEnd.getDate();
+
+  if (startMonth === endMonth) {
+    return `${startMonth} ${startDay}-${endDay}`;
+  }
+  return `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
+}
+
+interface WeekGroup {
+  label: string;
+  startDate: Date;
+  trips: TourPost[];
+}
+
+// Group trips by week
+function groupTripsByWeek(trips: TourPost[]): WeekGroup[] {
+  const groups = new Map<number, WeekGroup>();
+
+  trips.forEach((trip) => {
+    const tripDate = new Date(trip.tour_date + 'T12:00:00');
+    const weekStart = getWeekStart(tripDate);
+    const key = weekStart.getTime();
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        label: getWeekLabel(weekStart),
+        startDate: weekStart,
+        trips: [],
+      });
+    }
+    groups.get(key)!.trips.push(trip);
+  });
+
+  // Sort by week start date
+  return Array.from(groups.values()).sort(
+    (a, b) => a.startDate.getTime() - b.startDate.getTime()
+  );
+}
 
 const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
 
@@ -118,6 +188,7 @@ export default function PartnersPage() {
   const [timeFrame, setTimeFrame] = useState<'upcoming' | 'past'>('upcoming');
   const [showMyTrips, setShowMyTrips] = useState(false);
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
 
   // Compute activity counts from loaded posts
   const activityCounts = allPosts.reduce((acc, post) => {
@@ -174,6 +245,22 @@ export default function PartnersPage() {
     }
     loadPendingCounts();
   }, [user]);
+
+  // Load unread notifications
+  useEffect(() => {
+    async function loadNotifications() {
+      if (user) {
+        const notifs = await getUserNotifications(user.id, 'unread');
+        setNotifications(notifs);
+      }
+    }
+    loadNotifications();
+  }, [user]);
+
+  const handleDismissNotification = async (id: string) => {
+    await deleteNotification(id);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
 
   return (
     <div className="space-y-6">
@@ -257,6 +344,43 @@ export default function PartnersPage() {
         </div>
       </div>
 
+      {/* Notifications banner */}
+      {notifications.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              <span className="text-sm text-green-800 truncate">
+                {notifications.length === 1
+                  ? notifications[0].message
+                  : `You have ${notifications.length} new notifications`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                href={notifications.length === 1 ? `/trips/${notifications[0].trip_id}` : '/notifications'}
+                className="text-sm font-medium text-green-700 hover:text-green-800"
+              >
+                View
+              </Link>
+              {notifications.length === 1 && (
+                <button
+                  onClick={() => handleDismissNotification(notifications[0].id)}
+                  className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
+                  aria-label="Dismiss"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Activity Stats Cards */}
       {allPosts.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -327,7 +451,27 @@ export default function PartnersPage() {
             )
           )}
         </div>
+      ) : timeFrame === 'upcoming' ? (
+        // Weekly grouped view for upcoming trips
+        <div className="space-y-6">
+          {groupTripsByWeek(posts).map((week) => (
+            <div key={week.startDate.getTime()}>
+              <div className="sticky top-0 z-10 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 mb-3 flex items-center justify-between">
+                <span className="font-semibold text-gray-900">{week.label}</span>
+                <span className="text-sm text-gray-500">
+                  {week.trips.length} {week.trips.length === 1 ? 'trip' : 'trips'}
+                </span>
+              </div>
+              <div className="space-y-4">
+                {week.trips.map((post) => (
+                  <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
+        // Flat list for past trips
         <div className="space-y-4">
           {posts.map((post) => (
             <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} />

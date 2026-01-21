@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { getUnreadNotificationCount } from '@/lib/partners';
 
 const navItems = [
   { href: '/forecast', label: 'Forecast' },
@@ -15,6 +16,26 @@ export function Navigation() {
   const pathname = usePathname();
   const { user, profile, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Load unread notification count
+  useEffect(() => {
+    async function loadUnreadCount() {
+      if (user) {
+        const count = await getUnreadNotificationCount(user.id);
+        setUnreadCount(count);
+      } else {
+        setUnreadCount(0);
+      }
+    }
+    loadUnreadCount();
+
+    // Refresh count periodically when user is logged in
+    if (user) {
+      const interval = setInterval(loadUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const isActive = (href: string) => {
     return pathname.startsWith(href);
@@ -44,8 +65,28 @@ export function Navigation() {
               </Link>
             ))}
 
-            {/* User menu */}
+            {/* Notification bell and User menu */}
             <div className="ml-2 pl-2 border-l border-gray-700 flex items-center gap-1">
+              {user && (
+                <Link
+                  href="/notifications"
+                  className={`relative p-2 rounded-md transition-colors ${
+                    pathname === '/notifications'
+                      ? 'bg-gray-700 text-white'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  }`}
+                  aria-label="Notifications"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 text-xs font-bold text-white bg-red-500 rounded-full">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               {profile?.is_admin && (
                 <Link
                   href="/admin"
@@ -125,8 +166,29 @@ export function Navigation() {
               </Link>
             ))}
 
-            {/* User link in mobile menu */}
+            {/* Notifications and User link in mobile menu */}
             <div className="pt-2 mt-2 border-t border-gray-700">
+              {user && (
+                <Link
+                  href="/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    pathname === '/notifications'
+                      ? 'bg-gray-700 text-white'
+                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="ml-auto min-w-[20px] h-5 flex items-center justify-center px-1.5 text-xs font-bold text-white bg-red-500 rounded-full">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               {profile?.is_admin && (
                 <Link
                   href="/admin"

@@ -127,6 +127,18 @@ export interface TourFilters {
   userId?: string; // For "My Tours" - tours user organized or joined
 }
 
+// Notification types
+export interface UserNotification {
+  id: string;
+  user_id: string;
+  type: 'trip_accepted' | 'trip_confirmed';
+  trip_id: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  tour_posts?: { title: string; tour_date: string; activity: ActivityType };
+}
+
 // Get tour posts with filters
 export async function getTourPosts(filters: TourFilters = {}): Promise<TourPost[]> {
   if (!supabase) return [];
@@ -542,12 +554,47 @@ export async function updateTourResponseStatus(
     return { error: new Error('Supabase not configured') };
   }
 
+  // First get the response to find the user and tour
+  const { data: response, error: fetchError } = await supabase
+    .from('tour_responses')
+    .select('user_id, tour_id')
+    .eq('id', responseId)
+    .single();
+
+  if (fetchError || !response) {
+    return { error: fetchError as unknown as Error };
+  }
+
+  // Update the status
   const { error } = await supabase
     .from('tour_responses')
     .update({ status })
     .eq('id', responseId);
 
-  return { error: error as unknown as Error | null };
+  if (error) {
+    return { error: error as unknown as Error };
+  }
+
+  // If accepted, create a notification for the user
+  if (status === 'accepted') {
+    // Get trip details for the notification message
+    const { data: trip } = await supabase
+      .from('tour_posts')
+      .select('title')
+      .eq('id', response.tour_id)
+      .single();
+
+    if (trip) {
+      await supabase.from('notifications').insert({
+        user_id: response.user_id,
+        type: 'trip_accepted',
+        trip_id: response.tour_id,
+        message: `You've been accepted to "${trip.title}"!`,
+      });
+    }
+  }
+
+  return { error: null };
 }
 
 // Get users looking for partners
@@ -716,7 +763,40 @@ export async function updateTourStatus(
     .update({ status })
     .eq('id', tourId);
 
-  return { error: error as unknown as Error | null };
+  if (error) {
+    return { error: error as unknown as Error };
+  }
+
+  // If confirmed, notify all accepted participants
+  if (status === 'confirmed') {
+    // Get trip details
+    const { data: trip } = await supabase
+      .from('tour_posts')
+      .select('title')
+      .eq('id', tourId)
+      .single();
+
+    // Get all accepted participants
+    const { data: responses } = await supabase
+      .from('tour_responses')
+      .select('user_id')
+      .eq('tour_id', tourId)
+      .eq('status', 'accepted');
+
+    if (trip && responses && responses.length > 0) {
+      // Create notifications for all participants
+      const notifications = responses.map((r) => ({
+        user_id: r.user_id,
+        type: 'trip_confirmed' as const,
+        trip_id: tourId,
+        message: `"${trip.title}" is confirmed - It's On!`,
+      }));
+
+      await supabase.from('notifications').insert(notifications);
+    }
+  }
+
+  return { error: null };
 }
 
 // Update tour planning notes
@@ -732,6 +812,142 @@ export async function updateTourPlanningNotes(
     .from('tour_posts')
     .update({ planning_notes: planningNotes })
     .eq('id', tourId);
+
+  return { error: error as unknown as Error | null };
+}
+
+// ===== Notification Functions =====
+
+// Get user notifications
+export async function getUserNotifications(
+  userId: string,
+  filter: 'unread' | 'all' = 'all'
+): Promise<UserNotification[]> {
+  if (!supabase) return [];
+  const client = supabase;
+
+  const fetchData = async () => {
+    let query = client
+      .from('notifications')
+      .select(`
+        *,
+        tour_posts (
+          title,
+          tour_date,
+          activity
+        )
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (filter === 'unread') {
+      query = query.eq('is_read', false);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+
+    return data as UserNotification[];
+  };
+
+  return withTimeout(fetchData(), 10000, []);
+}
+
+// Get unread notification count
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  if (!supabase) return 0;
+  const client = supabase;
+
+  const fetchData = async () => {
+    const { count, error } = await client
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
+
+    if (error) {
+      console.error('Error counting notifications:', error);
+      return 0;
+    }
+
+    return count || 0;
+  };
+
+  return withTimeout(fetchData(), 5000, 0);
+}
+
+// Mark a single notification as read
+export async function markNotificationRead(
+  notificationId: string
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', notificationId);
+
+  return { error: error as unknown as Error | null };
+}
+
+// Mark all notifications as read for a user
+export async function markAllNotificationsRead(
+  userId: string
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('user_id', userId)
+    .eq('is_read', false);
+
+  return { error: error as unknown as Error | null };
+}
+
+// Delete a notification
+export async function deleteNotification(
+  notificationId: string
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', notificationId);
+
+  return { error: error as unknown as Error | null };
+}
+
+// Create a notification (internal helper)
+export async function createNotification(
+  userId: string,
+  type: 'trip_accepted' | 'trip_confirmed',
+  tripId: string,
+  message: string
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .insert({
+      user_id: userId,
+      type,
+      trip_id: tripId,
+      message,
+    });
 
   return { error: error as unknown as Error | null };
 }
