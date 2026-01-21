@@ -299,8 +299,8 @@ export default function PartnersPage() {
 
   // Auto-expand the first (most recent) month when viewing past trips
   useEffect(() => {
-    if (timeFrame === 'past' && posts.length > 0) {
-      const months = groupTripsByMonth(posts);
+    if (timeFrame === 'past' && allPosts.length > 0) {
+      const months = groupTripsByMonth(allPosts);
       if (months.length > 0) {
         setExpandedMonths(prev => {
           const next = new Set(prev);
@@ -309,7 +309,7 @@ export default function PartnersPage() {
         });
       }
     }
-  }, [timeFrame, posts]);
+  }, [timeFrame, allPosts]);
 
   // Compute activity counts from loaded posts
   const activityCounts = allPosts.reduce((acc, post) => {
