@@ -297,6 +297,20 @@ export default function PartnersPage() {
     });
   };
 
+  // Auto-expand the first (most recent) month when viewing past trips
+  useEffect(() => {
+    if (timeFrame === 'past' && posts.length > 0) {
+      const months = groupTripsByMonth(posts);
+      if (months.length > 0) {
+        setExpandedMonths(prev => {
+          const next = new Set(prev);
+          next.add(months[0].key);
+          return next;
+        });
+      }
+    }
+  }, [timeFrame, posts]);
+
   // Compute activity counts from loaded posts
   const activityCounts = allPosts.reduce((acc, post) => {
     const activity = post.activity || 'ski_tour';
@@ -616,9 +630,8 @@ export default function PartnersPage() {
       ) : (
         // Monthly grouped view for past trips
         <div className="space-y-4">
-          {groupTripsByMonth(posts).map((month, index) => {
-            // Auto-expand the first (most recent) month
-            const isExpanded = index === 0 || expandedMonths.has(month.key);
+          {groupTripsByMonth(posts).map((month) => {
+            const isExpanded = expandedMonths.has(month.key);
             return (
               <div key={month.key} className="border border-gray-200 rounded-xl overflow-hidden">
                 <button
