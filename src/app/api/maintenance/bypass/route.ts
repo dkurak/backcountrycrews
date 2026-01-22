@@ -75,11 +75,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid password' }, { status: 401 });
     }
 
-    // Password matches - set bypass cookie
+    // Password matches - set bypass cookie with current version
+    const bypassVersion = data.metadata?.bypass_version || 0;
     const response = NextResponse.json({ success: true });
 
-    // Set cookie that expires in 7 days
-    response.cookies.set('maintenance_bypass', 'true', {
+    // Set cookie that expires in 7 days, value is the bypass version
+    response.cookies.set('maintenance_bypass', String(bypassVersion), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

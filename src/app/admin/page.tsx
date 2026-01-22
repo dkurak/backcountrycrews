@@ -17,6 +17,7 @@ interface MaintenanceSettings {
   enabled: boolean;
   bypassPassword: string;
   message: string;
+  bypassVersion: number;
 }
 
 interface TestUser {
@@ -51,6 +52,7 @@ export default function AdminPage() {
     enabled: false,
     bypassPassword: '',
     message: 'We are currently working on something exciting. Check back soon!',
+    bypassVersion: 0,
   });
   const [maintenanceLoading, setMaintenanceLoading] = useState(false);
 
@@ -166,6 +168,7 @@ export default function AdminPage() {
           enabled: data.enabled,
           bypassPassword: (data.metadata?.bypass_password as string) || '',
           message: (data.metadata?.message as string) || 'We are currently working on something exciting. Check back soon!',
+          bypassVersion: (data.metadata?.bypass_version as number) || 0,
         });
       }
     } catch (error) {
@@ -177,20 +180,38 @@ export default function AdminPage() {
     if (!supabase) return;
 
     setMaintenanceLoading(true);
+    const turningOn = !maintenance.enabled;
+
     try {
+      // When turning ON, increment bypass_version to invalidate existing cookies
+      const newVersion = turningOn ? maintenance.bypassVersion + 1 : maintenance.bypassVersion;
+
+      const updateData: { enabled: boolean; metadata?: Record<string, unknown> } = {
+        enabled: turningOn,
+      };
+
+      // Only update metadata if turning on (to bump version)
+      if (turningOn) {
+        updateData.metadata = {
+          bypass_password: maintenance.bypassPassword || null,
+          message: maintenance.message,
+          bypass_version: newVersion,
+        };
+      }
+
       const { error } = await supabase
         .from('feature_flags')
-        .update({ enabled: !maintenance.enabled })
+        .update(updateData)
         .eq('key', 'system.maintenance_mode');
 
       if (error) {
         setMessage({ type: 'error', text: `Failed to toggle maintenance mode: ${error.message}` });
       } else {
-        setMaintenance(prev => ({ ...prev, enabled: !prev.enabled }));
+        setMaintenance(prev => ({ ...prev, enabled: turningOn, bypassVersion: newVersion }));
         clearFeatureFlagCache();
         setMessage({
           type: 'success',
-          text: `Maintenance mode ${!maintenance.enabled ? 'enabled' : 'disabled'}`
+          text: `Maintenance mode ${turningOn ? 'enabled' : 'disabled'}${turningOn ? ' - existing bypass cookies invalidated' : ''}`
         });
       }
     } catch (error) {
@@ -210,6 +231,7 @@ export default function AdminPage() {
           metadata: {
             bypass_password: maintenance.bypassPassword || null,
             message: maintenance.message,
+            bypass_version: maintenance.bypassVersion,
           },
         })
         .eq('key', 'system.maintenance_mode');

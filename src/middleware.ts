@@ -26,6 +26,7 @@ async function getMaintenanceMode(): Promise<{
   enabled: boolean;
   bypassPassword: string | null;
   message: string;
+  bypassVersion: number;
 } | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -53,7 +54,7 @@ async function getMaintenanceMode(): Promise<{
 
     const data = await response.json();
     if (!data || data.length === 0) {
-      return { enabled: false, bypassPassword: null, message: '' };
+      return { enabled: false, bypassPassword: null, message: '', bypassVersion: 0 };
     }
 
     const flag = data[0];
@@ -61,6 +62,7 @@ async function getMaintenanceMode(): Promise<{
       enabled: flag.enabled,
       bypassPassword: flag.metadata?.bypass_password || null,
       message: flag.metadata?.message || 'Site is under maintenance',
+      bypassVersion: flag.metadata?.bypass_version || 0,
     };
   } catch (error) {
     console.error('Middleware: Error fetching maintenance mode:', error);
@@ -159,10 +161,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for bypass cookie
+  // Check for bypass cookie with matching version
   const bypassCookie = request.cookies.get('maintenance_bypass');
-  if (bypassCookie?.value === 'true') {
-    return NextResponse.next();
+  if (bypassCookie?.value) {
+    const cookieVersion = parseInt(bypassCookie.value, 10);
+    if (!isNaN(cookieVersion) && cookieVersion === maintenance.bypassVersion) {
+      return NextResponse.next();
+    }
+    // Old cookie version or 'true' from old system - will be ignored
   }
 
   // Check if user is admin
