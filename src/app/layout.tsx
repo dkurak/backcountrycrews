@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SkinTrack CB - Crested Butte Backcountry",
-  description: "Avalanche forecasts and conditions for Crested Butte backcountry touring. Data from CBAC.",
+  title: "BackcountryCrews - Find Your Backcountry Partners",
+  description: "Find partners for backcountry skiing, hiking, biking, and more. Connect with local crews in Crested Butte and beyond.",
 };
 
 export default function RootLayout({

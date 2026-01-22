@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 );
 
 const TEST_USER_PASSWORD = 'TestUser123!';
-const TEST_EMAIL_DOMAIN = 'skintrackcb.local';
+const TEST_EMAIL_DOMAIN = 'backcountrycrews.local';
 
 // Sample user data for variety
 const SAMPLE_PROFILES = [

@@ -1,8 +1,8 @@
-# SkinTrack CB
+# BackcountryCrews
 
-A mobile-first web app for Crested Butte backcountry skiers and riders. Aggregates CBAC (Crested Butte Avalanche Center) forecasts with historical data and trend analysis.
+A mobile-first web app for finding partners for backcountry adventures. Currently focused on Crested Butte, with support for skiing, hiking, biking, off-roading, and more.
 
-**Live:** [skintrackcb.vercel.app](https://skintrackcb.vercel.app)
+**Live:** [backcountrycrews.com](https://backcountrycrews.com) (or [skintrackcb.vercel.app](https://skintrackcb.vercel.app))
 
 ## Features
 
@@ -62,8 +62,8 @@ Forecasts are automatically scraped daily from CBAC via GitHub Actions:
 
 1. Clone the repo:
    ```bash
-   git clone https://github.com/dkurak/skintrackcb.git
-   cd skintrackcb
+   git clone https://github.com/dkurak/backcountrycrews.git
+   cd backcountrycrews
    ```
 
 2. Install dependencies:

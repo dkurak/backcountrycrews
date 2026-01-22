@@ -1,4 +1,4 @@
-# SkinTrack CB - Feature Backlog
+# BackcountryCrews - Feature Backlog
 
 ## How to Use
 - Add new ideas to "Ideas / Unprioritized"
@@ -12,10 +12,10 @@ _Features prioritized for upcoming work_
 
 ### Multi-Activity Platform Expansion
 
-- [ ] **Rebranding for Multi-Activity**
-  - New name (domain candidates: rallyday.com, sendday.com, outcrew.com, trailpack.com)
-  - Activity-agnostic logo and branding
-  - "SkinTrack" → new name throughout
+- [x] **Rebranding for Multi-Activity** (Jan 2025)
+  - New name: BackcountryCrews (backcountrycrews.com)
+  - Updated branding throughout app
+  - Activity-agnostic positioning
 
 - [ ] **Per-Activity Profile Sections**
   - Show activity-specific experience on profile
