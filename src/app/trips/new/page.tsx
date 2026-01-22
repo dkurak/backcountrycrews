@@ -6,8 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { createTourPost, ActivityType, ACTIVITY_LABELS, ACTIVITY_ICONS, ACTIVITY_COLORS } from '@/lib/partners';
 import { getTrailheads, Trailhead } from '@/lib/trailheads';
-
-const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
+import { getEnabledActivities } from '@/lib/featureFlags';
 
 const EXPERIENCE_LEVELS = [
   { value: '', label: 'Any level welcome' },
@@ -41,10 +40,18 @@ export default function NewTourPostPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [trailheads, setTrailheads] = useState<Trailhead[]>([]);
+  const [enabledActivities, setEnabledActivities] = useState<ActivityType[]>(['ski_tour']);
 
-  // Fetch trailheads from database
+  // Fetch trailheads and enabled activities from database
   useEffect(() => {
     getTrailheads().then(setTrailheads);
+    getEnabledActivities().then((activities) => {
+      setEnabledActivities(activities);
+      // Set default activity to first enabled one
+      if (activities.length > 0 && !activities.includes(activity)) {
+        setActivity(activities[0]);
+      }
+    });
   }, []);
 
   // Redirect if not logged in
@@ -155,13 +162,14 @@ export default function NewTourPostPage() {
           </div>
         )}
 
-        {/* Activity type selector */}
+        {/* Activity type selector - only show if multiple activities enabled */}
+        {enabledActivities.length > 1 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Activity Type *
           </label>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {ALL_ACTIVITIES.map((act) => (
+          <div className={`grid gap-2 ${enabledActivities.length <= 3 ? 'grid-cols-' + enabledActivities.length : 'grid-cols-3 sm:grid-cols-6'}`}>
+            {enabledActivities.map((act) => (
               <button
                 key={act}
                 type="button"
@@ -178,6 +186,7 @@ export default function NewTourPostPage() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Trip details card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">

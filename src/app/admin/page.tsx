@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { clearFeatureFlagCache } from '@/lib/featureFlags';
+
+interface FeatureFlag {
+  key: string;
+  enabled: boolean;
+  metadata: Record<string, unknown>;
+  description: string | null;
+}
 
 interface TestUser {
   id: string;
@@ -31,11 +39,14 @@ export default function AdminPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activityStats, setActivityStats] = useState<ActivityStats[]>([]);
   const [totalTrips, setTotalTrips] = useState(0);
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
+  const [flagsLoading, setFlagsLoading] = useState(false);
 
-  // Fetch test users and stats on load
+  // Fetch test users, stats, and feature flags on load
   useEffect(() => {
     fetchTestUsers();
     fetchActivityStats();
+    fetchFeatureFlags();
   }, []);
 
   const fetchActivityStats = async () => {
@@ -100,6 +111,53 @@ export default function AdminPage() {
       console.error('Error fetching test users:', error);
     }
     setLoading(false);
+  };
+
+  const fetchFeatureFlags = async () => {
+    if (!supabase) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('feature_flags')
+        .select('*')
+        .order('key');
+
+      if (error) {
+        console.error('Error fetching feature flags:', error);
+        return;
+      }
+
+      setFeatureFlags(data || []);
+    } catch (error) {
+      console.error('Error fetching feature flags:', error);
+    }
+  };
+
+  const handleToggleFlag = async (key: string, currentEnabled: boolean) => {
+    if (!supabase) return;
+
+    setFlagsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('feature_flags')
+        .update({ enabled: !currentEnabled })
+        .eq('key', key);
+
+      if (error) {
+        setMessage({ type: 'error', text: `Failed to toggle flag: ${error.message}` });
+      } else {
+        // Update local state
+        setFeatureFlags(prev =>
+          prev.map(f => f.key === key ? { ...f, enabled: !currentEnabled } : f)
+        );
+        // Clear the frontend cache so changes take effect immediately
+        clearFeatureFlagCache();
+        setMessage({ type: 'success', text: `${key} is now ${!currentEnabled ? 'enabled' : 'disabled'}` });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to toggle flag' });
+    }
+    setFlagsLoading(false);
   };
 
   const handleCreateTestUsers = async () => {
@@ -321,6 +379,103 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Feature Flags */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Feature Flags
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Toggle activities and features on/off. Changes take effect immediately.
+        </p>
+
+        {featureFlags.length === 0 ? (
+          <p className="text-gray-500">No feature flags found. Run the migration first.</p>
+        ) : (
+          <div className="space-y-6">
+            {/* Activity Flags */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Activities</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {featureFlags
+                  .filter(f => f.key.startsWith('activity.'))
+                  .sort((a, b) => ((a.metadata?.order as number) || 99) - ((b.metadata?.order as number) || 99))
+                  .map((flag) => {
+                    const activityName = flag.key.replace('activity.', '');
+                    const icon = flag.metadata?.icon as string || '';
+                    return (
+                      <button
+                        key={flag.key}
+                        onClick={() => handleToggleFlag(flag.key, flag.enabled)}
+                        disabled={flagsLoading}
+                        className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                          flag.enabled
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 bg-gray-50 opacity-60'
+                        } ${flagsLoading ? 'cursor-not-allowed' : 'hover:border-gray-400'}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">{icon}</span>
+                          <div className="text-left">
+                            <div className="font-medium text-gray-900 text-sm">
+                              {ACTIVITY_LABELS[activityName] || activityName}
+                            </div>
+                            <div className="text-xs text-gray-500">{flag.description}</div>
+                          </div>
+                        </div>
+                        <div className={`w-10 h-6 rounded-full transition-colors ${
+                          flag.enabled ? 'bg-green-500' : 'bg-gray-300'
+                        }`}>
+                          <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ${
+                            flag.enabled ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Feature Flags */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Features</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {featureFlags
+                  .filter(f => f.key.startsWith('feature.'))
+                  .map((flag) => {
+                    const featureName = flag.key.replace('feature.', '').replace(/_/g, ' ');
+                    return (
+                      <button
+                        key={flag.key}
+                        onClick={() => handleToggleFlag(flag.key, flag.enabled)}
+                        disabled={flagsLoading}
+                        className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                          flag.enabled
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 bg-gray-50 opacity-60'
+                        } ${flagsLoading ? 'cursor-not-allowed' : 'hover:border-gray-400'}`}
+                      >
+                        <div className="text-left">
+                          <div className="font-medium text-gray-900 text-sm capitalize">
+                            {featureName}
+                          </div>
+                          <div className="text-xs text-gray-500">{flag.description}</div>
+                        </div>
+                        <div className={`w-10 h-6 rounded-full transition-colors ${
+                          flag.enabled ? 'bg-green-500' : 'bg-gray-300'
+                        }`}>
+                          <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform mt-0.5 ${
+                            flag.enabled ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'
+                          }`} />
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Test Users List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

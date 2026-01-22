@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getEnabledActivities } from '@/lib/featureFlags';
 
 const EXPERIENCE_LABELS: Record<string, string> = {
   beginner: 'Beginner',
@@ -163,8 +164,6 @@ function groupTripsByMonth(trips: TourPost[]): MonthGroup[] {
   return Array.from(groups.values()).sort((a, b) => b.key.localeCompare(a.key));
 }
 
-const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
-
 function TourPostCard({ post, pendingCount }: { post: TourPost; pendingCount?: number }) {
   const tourDate = new Date(post.tour_date + 'T12:00:00');
   const isToday = new Date().toISOString().split('T')[0] === post.tour_date;
@@ -272,6 +271,7 @@ export default function PartnersPage() {
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['this', 'next', 'future']));
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const [enabledActivities, setEnabledActivities] = useState<ActivityType[]>(['ski_tour']);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => {
@@ -296,6 +296,11 @@ export default function PartnersPage() {
       return next;
     });
   };
+
+  // Fetch enabled activities on mount
+  useEffect(() => {
+    getEnabledActivities().then(setEnabledActivities);
+  }, []);
 
   // Auto-expand the first (most recent) month when viewing past trips
   useEffect(() => {
@@ -502,14 +507,14 @@ export default function PartnersPage() {
         </div>
       )}
 
-      {/* Activity Stats Cards */}
-      {allPosts.length > 0 && (
+      {/* Activity Stats Cards - only show if multiple activities enabled or there's data for multiple */}
+      {allPosts.length > 0 && enabledActivities.length > 1 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="text-sm text-gray-600 mb-3">
             Activities ({allPosts.length} total){selectedActivities.size > 0 && ` · ${posts.length} selected`}
           </div>
           <div className="flex flex-wrap gap-2">
-            {ALL_ACTIVITIES.map((activity) => {
+            {enabledActivities.map((activity) => {
               const count = activityCounts[activity] || 0;
               if (count === 0) return null;
               const isSelected = selectedActivities.has(activity);
