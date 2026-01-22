@@ -1,4 +1,4 @@
-# BackcountryCrews
+# Backcountry Crews
 
 A mobile-first web app for finding partners for backcountry adventures. Currently focused on Crested Butte, with support for skiing, hiking, biking, off-roading, and more.
 

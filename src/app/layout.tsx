@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BackcountryCrews - Find Your Backcountry Partners",
+  title: "Backcountry Crews - Find Your Backcountry Partners",
   description: "Find partners for backcountry skiing, hiking, biking, and more. Connect with local crews in Crested Butte and beyond.",
 };
 

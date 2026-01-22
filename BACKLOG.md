@@ -1,4 +1,4 @@
-# BackcountryCrews - Feature Backlog
+# Backcountry Crews - Feature Backlog
 
 ## How to Use
 - Add new ideas to "Ideas / Unprioritized"
@@ -13,7 +13,7 @@ _Features prioritized for upcoming work_
 ### Multi-Activity Platform Expansion
 
 - [x] **Rebranding for Multi-Activity** (Jan 2025)
-  - New name: BackcountryCrews (backcountrycrews.com)
+  - New name: Backcountry Crews (backcountrycrews.com)
   - Updated branding throughout app
   - Activity-agnostic positioning
 

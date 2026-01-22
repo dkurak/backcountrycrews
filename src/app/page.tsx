@@ -159,7 +159,7 @@ export default function HomePage() {
         ) : (
           <>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to BackcountryCrews
+              Welcome to Backcountry Crews
             </h1>
             <p className="text-gray-500">Find your crew for backcountry adventures</p>
           </>
