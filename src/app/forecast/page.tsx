@@ -226,9 +226,6 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
         </div>
       )}
 
-      {/* 7-Day Analysis */}
-      {forecasts.length >= 7 && <WeekAnalysis forecasts={forecasts} />}
-
       {/* Recent History */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -505,6 +502,176 @@ function WeatherTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' 
   );
 }
 
+function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' }) {
+  const [forecasts, setForecasts] = useState<Forecast[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadForecasts() {
+      setLoading(true);
+      if (isSupabaseConfigured) {
+        const { forecasts: data, weatherMap } = await getForecastsWithWeather(selectedZone, 14);
+        setForecasts(data.map(f => {
+          const weatherKey = `${f.zone_id}_${f.valid_date}`;
+          return convertForecast(f, weatherMap[weatherKey]);
+        }));
+      } else {
+        setForecasts(mockForecasts.filter((f) => f.zone === selectedZone));
+      }
+      setLoading(false);
+    }
+    loadForecasts();
+  }, [selectedZone]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Loading analysis...</p>
+      </div>
+    );
+  }
+
+  if (forecasts.length < 7) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Not enough data for 7-day analysis. Need at least 7 days of forecasts.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">7-Day Analysis</h1>
+        <p className="text-gray-500">
+          Week in review for {selectedZone === 'southeast' ? 'Southeast' : 'Northwest'} zone
+        </p>
+      </div>
+
+      {/* Week Analysis Component */}
+      <WeekAnalysis forecasts={forecasts} />
+
+      {/* Danger Trend Summary */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Danger Level Trend</h2>
+        <div className="space-y-2">
+          {forecasts.slice(0, 7).map((forecast) => {
+            const maxDanger = Math.max(
+              forecast.danger_alpine,
+              forecast.danger_treeline,
+              forecast.danger_below_treeline
+            );
+            const date = new Date(forecast.valid_date + 'T12:00:00');
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+            return (
+              <div key={forecast.id} className="flex items-center gap-3">
+                <div className="w-24 text-sm text-gray-600">{dayName}</div>
+                <div className="flex-1 flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((level) => (
+                    <div
+                      key={level}
+                      className="h-6 flex-1 rounded"
+                      style={{
+                        backgroundColor: level <= maxDanger
+                          ? level === 5 ? '#231F20'
+                            : level === 4 ? '#ED1C24'
+                            : level === 3 ? '#F7931E'
+                            : level === 2 ? '#FFF200'
+                            : '#50B848'
+                          : '#e5e7eb',
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="w-24 text-sm font-medium text-right">
+                  {DANGER_LABELS[maxDanger as 1 | 2 | 3 | 4 | 5]}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Problem Types This Week */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Problem Types This Week</h2>
+        {(() => {
+          const problemCounts = new Map<string, number>();
+          forecasts.slice(0, 7).forEach(f => {
+            f.problems.forEach(p => {
+              problemCounts.set(p.type, (problemCounts.get(p.type) || 0) + 1);
+            });
+          });
+
+          const sortedProblems = Array.from(problemCounts.entries())
+            .sort((a, b) => b[1] - a[1]);
+
+          if (sortedProblems.length === 0) {
+            return <p className="text-gray-500">No avalanche problems reported this week.</p>;
+          }
+
+          return (
+            <div className="space-y-3">
+              {sortedProblems.map(([type, count]) => (
+                <div key={type} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">
+                      {type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    </div>
+                    <div className="text-xs text-gray-500">{count} of 7 days</div>
+                  </div>
+                  <div className="w-32 bg-gray-100 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full"
+                      style={{ width: `${(count / 7) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* CBAC Card */}
+      <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-200 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="text-2xl">⛰️</div>
+          <div className="flex-1">
+            <div className="font-semibold text-gray-900">Crested Butte Avalanche Center</div>
+            <div className="text-sm text-gray-600">
+              Official forecast source for this zone
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href="https://cbavalanchecenter.org/forecasts/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          >
+            Full Forecast
+          </a>
+          <a
+            href="https://cbavalanchecenter.org/observations/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+          >
+            Observations
+          </a>
+        </div>
+        <div className="mt-3 text-xs text-gray-400">
+          Not affiliated with CBAC
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ForecastContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -512,10 +679,10 @@ function ForecastContent() {
   const zoneParam = searchParams.get('zone');
   const tabParam = searchParams.get('tab');
   const initialZone = (zoneParam === 'northwest' || zoneParam === 'southeast') ? zoneParam : 'southeast';
-  const initialTab = (tabParam === 'weather') ? 'weather' : 'conditions';
+  const initialTab = (tabParam === 'weather' || tabParam === 'analysis') ? tabParam : 'conditions';
 
   const [selectedZone, setSelectedZone] = useState<'northwest' | 'southeast'>(initialZone);
-  const [activeTab, setActiveTab] = useState<'conditions' | 'weather'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'conditions' | 'weather' | 'analysis'>(initialTab as 'conditions' | 'weather' | 'analysis');
 
   const handleZoneChange = (zone: 'northwest' | 'southeast') => {
     setSelectedZone(zone);
@@ -525,7 +692,7 @@ function ForecastContent() {
     router.push(`/forecast?${params.toString()}`, { scroll: false });
   };
 
-  const handleTabChange = (tab: 'conditions' | 'weather') => {
+  const handleTabChange = (tab: 'conditions' | 'weather' | 'analysis') => {
     setActiveTab(tab);
     const params = new URLSearchParams();
     params.set('zone', selectedZone);
@@ -572,6 +739,16 @@ function ForecastContent() {
           Conditions
         </button>
         <button
+          onClick={() => handleTabChange('analysis')}
+          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+            activeTab === 'analysis'
+              ? 'border-gray-900 text-gray-900'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          7-Day
+        </button>
+        <button
           onClick={() => handleTabChange('weather')}
           className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
             activeTab === 'weather'
@@ -586,6 +763,8 @@ function ForecastContent() {
       {/* Tab content */}
       {activeTab === 'conditions' ? (
         <ConditionsTab selectedZone={selectedZone} />
+      ) : activeTab === 'analysis' ? (
+        <AnalysisTab selectedZone={selectedZone} />
       ) : (
         <WeatherTab selectedZone={selectedZone} />
       )}
