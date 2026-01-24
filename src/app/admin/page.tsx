@@ -432,12 +432,12 @@ export default function AdminPage() {
   };
 
   const ACTIVITY_COLORS: Record<string, string> = {
-    ski_tour: 'bg-blue-100 text-blue-700',
-    offroad: 'bg-orange-100 text-orange-700',
-    mountain_bike: 'bg-green-100 text-green-700',
-    trail_run: 'bg-purple-100 text-purple-700',
-    hike: 'bg-yellow-100 text-yellow-700',
-    climb: 'bg-red-100 text-red-700',
+    ski_tour: 'bg-slate-200 text-slate-700',
+    offroad: 'bg-amber-200 text-amber-800',
+    mountain_bike: 'bg-teal-200 text-teal-800',
+    trail_run: 'bg-violet-200 text-violet-800',
+    hike: 'bg-stone-200 text-stone-700',
+    climb: 'bg-rose-200 text-rose-800',
   };
 
   const tabs: { id: AdminTab; label: string; icon: string }[] = [

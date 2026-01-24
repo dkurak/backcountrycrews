@@ -30,9 +30,9 @@ export const themes: Record<ThemeName, ThemeColors> = {
   'storm-day': {
     name: 'Storm Day',
     description: 'Charcoal with ice blue accents - modern, clean, serious',
-    primary: { from: '#374151', to: '#1f2937', text: '#ffffff', subtext: '#9ca3af' },
-    secondary: { from: '#4b5563', to: '#374151', text: '#ffffff', subtext: '#9ca3af' },
-    tertiary: { from: '#6b7280', to: '#4b5563', text: '#ffffff', subtext: '#d1d5db' },
+    primary: { from: '#334155', to: '#1e293b', text: '#ffffff', subtext: '#94a3b8' },    // Slate blue-gray
+    secondary: { from: '#0f4c5c', to: '#083344', text: '#ffffff', subtext: '#67e8f9' },  // Deep teal
+    tertiary: { from: '#3f3f46', to: '#27272a', text: '#ffffff', subtext: '#a1a1aa' },   // Warm zinc
     header: { bg: '#111827', text: '#f9fafb' },
     accent: '#0ea5e9',
   },
