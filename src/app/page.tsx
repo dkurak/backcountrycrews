@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
+import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
 import { getTripsAwaitingResponse, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, UserNotification, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 
 function formatTimeAgo(dateString: string): string {
@@ -149,6 +150,9 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
+      {/* Avalanche Warning Banner - shows for all zones */}
+      <AvalancheWarningBanner />
+
       {/* Hero section with greeting */}
       <div className="text-center py-6">
         {!authLoading && user && profile ? (

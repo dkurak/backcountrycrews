@@ -8,6 +8,7 @@ import { ForecastRow } from '@/components/ForecastRow';
 import { WeekAnalysis } from '@/components/WeekAnalysis';
 import { QuickTake } from '@/components/QuickTake';
 import { SkyIcon, WindIcon } from '@/components/WeatherIcons';
+import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
 import { getForecastsWithWeather, getWeather, isSupabaseConfigured, DBForecast, DBAvalancheProblem, DBWeatherForecast } from '@/lib/supabase';
 import { mockForecasts } from '@/lib/mockData';
 import { DANGER_LABELS, Forecast, AvalancheProblem, ForecastTrend } from '@/types/forecast';
@@ -111,6 +112,9 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
 
   return (
     <div className="space-y-6">
+      {/* Avalanche Warning Banner */}
+      <AvalancheWarningBanner zoneFilter={selectedZone} />
+
       {/* Current Forecast Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-start justify-between mb-4">
