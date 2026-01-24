@@ -27,8 +27,7 @@ function convertForecast(
     danger_treeline: dbForecast.danger_treeline as 1 | 2 | 3 | 4 | 5,
     danger_below_treeline: dbForecast.danger_below_treeline as 1 | 2 | 3 | 4 | 5,
     travel_advice: dbForecast.travel_advice || undefined,
-    bottom_line: dbForecast.bottom_line || '',
-    discussion: dbForecast.discussion || '',
+    forecast_url: dbForecast.forecast_url || 'https://cbavalanchecenter.org/forecasts/',
     problems: dbForecast.avalanche_problems.map((p): AvalancheProblem => ({
       id: p.id,
       type: p.problem_type as AvalancheProblem['type'],
@@ -166,10 +165,21 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
           </div>
 
           <div className="flex-1">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
-              Bottom Line
-            </h2>
-            <p className="text-gray-700 leading-relaxed text-sm">{currentForecast.bottom_line}</p>
+            <a
+              href="https://cbavalanchecenter.org/forecasts/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <span className="text-2xl">⛰️</span>
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-gray-900">Read Full Forecast on CBAC</div>
+                <div className="text-xs text-gray-500">Bottom line, forecast discussion &amp; complete details</div>
+              </div>
+              <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
           </div>
         </div>
 
@@ -185,18 +195,7 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
           </div>
         </div>
 
-        {/* Forecast Discussion */}
-        {currentForecast.discussion && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-              Forecast Discussion
-            </h2>
-            <div className="text-gray-700 leading-relaxed whitespace-pre-line text-sm">
-              {currentForecast.discussion}
-            </div>
-          </div>
-        )}
-      </div>
+              </div>
 
       {/* What's Changed */}
       {forecasts.length > 1 && (

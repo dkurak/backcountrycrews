@@ -371,11 +371,22 @@ export function ForecastRow({ forecast, previousForecast, weekForecasts, expande
             </div>
           )}
 
-          {/* Bottom line */}
-          <div className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-1">Bottom Line</h4>
-            <p className="text-sm text-gray-600">{forecast.bottom_line}</p>
-          </div>
+          {/* Read Full Forecast Link */}
+          <a
+            href="https://cbavalanchecenter.org/forecasts/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-4 flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <span className="text-lg">⛰️</span>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-gray-900">Read Full Forecast</div>
+              <div className="text-xs text-gray-500">Bottom line, discussion &amp; details on CBAC</div>
+            </div>
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
 
           {/* Problems */}
           <div>

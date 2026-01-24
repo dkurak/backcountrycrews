@@ -20,8 +20,7 @@ function convertForecast(
     danger_alpine: dbForecast.danger_alpine as 1 | 2 | 3 | 4 | 5,
     danger_treeline: dbForecast.danger_treeline as 1 | 2 | 3 | 4 | 5,
     danger_below_treeline: dbForecast.danger_below_treeline as 1 | 2 | 3 | 4 | 5,
-    bottom_line: dbForecast.bottom_line || '',
-    discussion: dbForecast.discussion || '',
+    forecast_url: dbForecast.forecast_url || 'https://cbavalanchecenter.org/forecasts/',
     problems: dbForecast.avalanche_problems.map((p): AvalancheProblem => ({
       id: p.id,
       type: p.problem_type as AvalancheProblem['type'],

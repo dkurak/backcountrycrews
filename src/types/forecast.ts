@@ -111,8 +111,9 @@ export interface Forecast {
   danger_treeline: DangerLevel;
   danger_below_treeline: DangerLevel;
   travel_advice?: string;
-  bottom_line: string;
-  discussion?: string;
+  bottom_line?: string; // Now optional - we link to CBAC instead
+  discussion?: string; // Now optional - we link to CBAC instead
+  forecast_url?: string; // Link to CBAC forecast
   problems: AvalancheProblem[];
   weather?: ForecastWeather;
   // Analysis fields
