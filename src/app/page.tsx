@@ -322,6 +322,37 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Invite friends banner for logged-in users */}
+      {!authLoading && user && (
+        <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl p-5 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold mb-1">Know someone who&apos;d love this?</h3>
+              <p className="text-teal-100 text-sm">
+                Help us build a great backcountry community in CB. Share with friends who are looking for touring partners.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const shareText = "Check out Backcountry Crews - find partners for ski tours and outdoor adventures in Crested Butte! backcountrycrews.com";
+                if (navigator.share) {
+                  navigator.share({ text: shareText, url: 'https://backcountrycrews.com' });
+                } else {
+                  navigator.clipboard.writeText(shareText);
+                  alert('Link copied to clipboard!');
+                }
+              }}
+              className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-50 transition-colors text-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              Share
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sign in prompt for non-logged-in users */}
       {!authLoading && !user && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
