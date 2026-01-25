@@ -67,41 +67,40 @@ function InviteSection({ tripSlug, tripTitle, tripDate }: { tripSlug: string; tr
   );
 
   return (
-    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-2xl">📨</span>
-        <h2 className="text-lg font-semibold text-teal-900">Invite Your Crew</h2>
-      </div>
-      <p className="text-teal-700 text-sm mb-4">
-        Share this trip with friends to get your crew together.
-      </p>
+    <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-5 text-white">
+      <div className="flex flex-col gap-4">
+        <div>
+          <h3 className="font-semibold text-lg mb-1">Invite Your Crew</h3>
+          <p className="text-slate-300 text-sm">
+            Share this trip with friends to get your crew together.
+          </p>
+        </div>
 
-      <div className="space-y-3">
-        {/* Copy Link Button */}
+        {/* Copy Link */}
         <div className="flex gap-2">
           <input
             type="text"
             value={tripUrl}
             readOnly
-            className="flex-1 px-3 py-2 bg-white border border-teal-200 rounded-lg text-sm text-gray-600 truncate"
+            className="flex-1 px-3 py-2 bg-slate-600 border border-slate-500 rounded-lg text-sm text-slate-200 truncate"
           />
           <button
             onClick={handleCopyLink}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               copied
-                ? 'bg-green-100 text-green-700'
-                : 'bg-teal-600 text-white hover:bg-teal-700'
+                ? 'bg-green-500 text-white'
+                : 'bg-slate-600 text-white hover:bg-slate-500'
             }`}
           >
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
 
-        {/* Email & Text on same row */}
-        <div className="flex gap-2">
+        {/* Email, Text buttons */}
+        <div className="flex flex-wrap gap-2">
           <a
             href={`mailto:?subject=${emailSubject}&body=${emailBody}`}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-teal-300 text-teal-700 rounded-lg text-sm font-medium hover:bg-teal-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-800 rounded-lg font-medium hover:bg-slate-100 transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -110,7 +109,7 @@ function InviteSection({ tripSlug, tripTitle, tripDate }: { tripSlug: string; tr
           </a>
           <a
             href={`sms:?body=${encodeURIComponent(`Join my trip: ${tripTitle} - ${tripUrl}`)}`}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-white border border-teal-300 text-teal-700 rounded-lg text-sm font-medium hover:bg-teal-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-800 rounded-lg font-medium hover:bg-slate-100 transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />

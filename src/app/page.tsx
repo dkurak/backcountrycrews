@@ -324,18 +324,18 @@ export default function HomePage() {
 
       {/* Invite friends banner for logged-in users */}
       {!authLoading && user && (
-        <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-xl p-5 text-white">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-5 text-white">
           <div className="flex flex-col gap-4">
             <div>
-              <h3 className="font-semibold mb-1">Know someone who&apos;d love this?</h3>
-              <p className="text-teal-100 text-sm">
-                Help us build a great backcountry community in CB. Share with friends who are looking for touring partners.
+              <h3 className="font-semibold text-lg mb-1">Help Build Our Community</h3>
+              <p className="text-slate-300 text-sm">
+                Know someone who&apos;d love to find backcountry partners? Invite your friends to join and let&apos;s grow this crew together.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <a
                 href="mailto:?subject=Join%20me%20on%20Backcountry%20Crews&body=Check%20out%20Backcountry%20Crews%20-%20find%20partners%20for%20ski%20tours%20and%20outdoor%20adventures%20in%20Crested%20Butte!%0A%0Ahttps://backcountrycrews.com"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-50 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-800 rounded-lg font-medium hover:bg-slate-100 transition-colors text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -344,7 +344,7 @@ export default function HomePage() {
               </a>
               <a
                 href="sms:?body=Check%20out%20Backcountry%20Crews%20-%20find%20partners%20for%20ski%20tours%20in%20Crested%20Butte!%20backcountrycrews.com"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-teal-700 rounded-lg font-medium hover:bg-teal-50 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white text-slate-800 rounded-lg font-medium hover:bg-slate-100 transition-colors text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -356,7 +356,7 @@ export default function HomePage() {
                   navigator.clipboard.writeText('Check out Backcountry Crews - find partners for ski tours in Crested Butte! backcountrycrews.com');
                   alert('Link copied!');
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-400 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
