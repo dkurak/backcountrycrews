@@ -108,6 +108,7 @@ export function Navigation() {
                       ? 'bg-gray-700 text-white'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                   }`}
+                  title="Your account"
                 >
                   {profile?.avatar_url ? (
                     <img
@@ -120,7 +121,7 @@ export function Navigation() {
                       {(profile?.display_name || user.email || '?')[0].toUpperCase()}
                     </span>
                   )}
-                  {profile?.display_name || 'Profile'}
+                  {profile?.display_name || 'Account'}
                 </Link>
               ) : (
                 <Link
@@ -224,7 +225,7 @@ export function Navigation() {
                       {(profile?.display_name || user.email || '?')[0].toUpperCase()}
                     </span>
                   )}
-                  {profile?.display_name || 'Profile'}
+                  {profile?.display_name || 'My Account'}
                 </Link>
               ) : (
                 <Link
