@@ -433,6 +433,25 @@ export async function getMyTourPosts(userId: string): Promise<TourPost[]> {
   return withTimeout(fetchData(), 10000, []);
 }
 
+// Get IDs of trips the user has joined (accepted responses)
+export async function getJoinedTripIds(userId: string): Promise<Set<string>> {
+  if (!supabase) return new Set();
+  const client = supabase;
+
+  const { data, error } = await client
+    .from('tour_responses')
+    .select('tour_id')
+    .eq('user_id', userId)
+    .eq('status', 'accepted');
+
+  if (error) {
+    console.error('Error fetching joined trips:', error);
+    return new Set();
+  }
+
+  return new Set(data?.map(r => r.tour_id) || []);
+}
+
 // Create a tour post
 export async function createTourPost(
   userId: string,

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, getJoinedTripIds, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 import { getEnabledActivities } from '@/lib/featureFlags';
 import { getTripPath } from '@/lib/slugify';
 
@@ -165,12 +165,13 @@ function groupTripsByMonth(trips: TourPost[]): MonthGroup[] {
   return Array.from(groups.values()).sort((a, b) => b.key.localeCompare(a.key));
 }
 
-function TourPostCard({ post, pendingCount, currentUserId, showRoleBadge }: { post: TourPost; pendingCount?: number; currentUserId?: string; showRoleBadge?: boolean }) {
+function TourPostCard({ post, pendingCount, currentUserId, joinedTripIds }: { post: TourPost; pendingCount?: number; currentUserId?: string; joinedTripIds?: Set<string> }) {
   const tourDate = new Date(post.tour_date + 'T12:00:00');
   const isToday = new Date().toISOString().split('T')[0] === post.tour_date;
   const isTomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0] === post.tour_date;
   const activity = post.activity || 'ski_tour';
   const isOrganizer = currentUserId && post.user_id === currentUserId;
+  const hasJoined = joinedTripIds?.has(post.id);
 
   return (
     <Link
@@ -185,13 +186,14 @@ function TourPostCard({ post, pendingCount, currentUserId, showRoleBadge }: { po
               {ACTIVITY_LABELS[activity]}
             </span>
             <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
-            {showRoleBadge && currentUserId && (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                isOrganizer
-                  ? 'bg-purple-100 text-purple-700'
-                  : 'bg-green-100 text-green-700'
-              }`}>
-                {isOrganizer ? 'Organizer' : 'Joined'}
+            {isOrganizer && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                Organizer
+              </span>
+            )}
+            {!isOrganizer && hasJoined && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                Joined
               </span>
             )}
             {pendingCount && pendingCount > 0 && (
@@ -279,6 +281,7 @@ export default function PartnersPage() {
   const [timeFrame, setTimeFrame] = useState<'upcoming' | 'past'>('upcoming');
   const [showMyTrips, setShowMyTrips] = useState(false);
   const [pendingCounts, setPendingCounts] = useState<Record<string, number>>({});
+  const [joinedTripIds, setJoinedTripIds] = useState<Set<string>>(new Set());
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['this', 'next', 'future']));
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
@@ -381,6 +384,19 @@ export default function PartnersPage() {
       }
     }
     loadPendingCounts();
+  }, [user]);
+
+  // Load joined trip IDs for the user
+  useEffect(() => {
+    async function loadJoinedTrips() {
+      if (user) {
+        const ids = await getJoinedTripIds(user.id);
+        setJoinedTripIds(ids);
+      } else {
+        setJoinedTripIds(new Set());
+      }
+    }
+    loadJoinedTrips();
   }, [user]);
 
   // Load unread notifications
@@ -674,7 +690,7 @@ export default function PartnersPage() {
                           <div className="text-sm font-medium text-gray-500 mb-2">{week.dateRange}</div>
                           <div className="space-y-3">
                             {week.trips.map((post) => (
-                              <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} showRoleBadge={showMyTrips} />
+                              <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} joinedTripIds={joinedTripIds} />
                             ))}
                           </div>
                         </div>
@@ -682,7 +698,7 @@ export default function PartnersPage() {
                     ) : (
                       // For this/next week, show trips directly
                       category.weeks.flatMap(w => w.trips).map((post) => (
-                        <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} showRoleBadge={showMyTrips} />
+                        <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} joinedTripIds={joinedTripIds} />
                       ))
                     )}
                   </div>
@@ -720,7 +736,7 @@ export default function PartnersPage() {
                 {isExpanded && (
                   <div className="p-4 space-y-4 bg-white">
                     {month.trips.map((post) => (
-                      <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} showRoleBadge={showMyTrips} />
+                      <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} joinedTripIds={joinedTripIds} />
                     ))}
                   </div>
                 )}
