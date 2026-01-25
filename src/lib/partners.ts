@@ -98,6 +98,7 @@ export interface TourResponse {
 export interface TourParticipant {
   user_id: string;
   display_name: string | null;
+  avatar_url: string | null;
   experience_level: string | null;
 }
 
@@ -561,6 +562,7 @@ export async function getTourParticipants(tourId: string): Promise<TourParticipa
         user_id,
         profiles (
           display_name,
+          avatar_url,
           experience_level
         )
       `)
@@ -573,12 +575,13 @@ export async function getTourParticipants(tourId: string): Promise<TourParticipa
     }
 
     // Cast profiles to handle Supabase's nested object typing
-    type ProfileData = { display_name: string | null; experience_level: string | null };
+    type ProfileData = { display_name: string | null; avatar_url: string | null; experience_level: string | null };
     return (data || []).map(r => {
       const profile = r.profiles as unknown as ProfileData | null;
       return {
         user_id: r.user_id,
         display_name: profile?.display_name || null,
+        avatar_url: profile?.avatar_url || null,
         experience_level: profile?.experience_level || null,
       };
     });
@@ -665,6 +668,7 @@ export async function updateTourResponseStatus(
 export async function getPartnersLooking(zone?: string): Promise<{
   id: string;
   display_name: string | null;
+  avatar_url: string | null;
   experience_level: string | null;
   fitness_level: string | null;
   certifications: string[] | null;
@@ -681,6 +685,7 @@ export async function getPartnersLooking(zone?: string): Promise<{
     .select(`
       id,
       display_name,
+      avatar_url,
       experience_level,
       fitness_level,
       certifications,
@@ -793,7 +798,7 @@ export async function getTourParticipantsWithContact(
     // Get profiles with contact info
     const { data: profiles, error: profilesError } = await client
       .from('profiles')
-      .select('id, display_name, experience_level, phone, email')
+      .select('id, display_name, avatar_url, experience_level, phone, email')
       .in('id', userIds);
 
     if (profilesError) {
@@ -804,6 +809,7 @@ export async function getTourParticipantsWithContact(
     return (profiles || []).map(p => ({
       user_id: p.id,
       display_name: p.display_name,
+      avatar_url: p.avatar_url,
       experience_level: p.experience_level,
       phone: p.phone,
       email: p.email,

@@ -418,7 +418,17 @@ export default function TourPostPage() {
                   href={`/profile/${participant.user_id}`}
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full hover:bg-green-100 transition-colors"
                 >
-                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  {participant.avatar_url ? (
+                    <img
+                      src={participant.avatar_url}
+                      alt={participant.display_name || 'Participant'}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="w-6 h-6 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold text-green-700">
+                      {(participant.display_name || '?')[0].toUpperCase()}
+                    </span>
+                  )}
                   <span className="text-sm font-medium text-green-800">
                     {participant.display_name || 'Anonymous'}
                   </span>
@@ -668,15 +678,30 @@ export default function TourPostPage() {
           <div className="space-y-3">
             {participantsWithContact.map((p) => (
               <div key={p.user_id} className="flex items-center justify-between">
-                <div>
-                  <span className="font-medium text-blue-900">
-                    {p.display_name || 'Anonymous'}
-                  </span>
-                  {p.user_id === post.user_id && (
-                    <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded">
-                      Organizer
-                    </span>
-                  )}
+                <div className="flex items-center gap-3">
+                  <Link href={`/profile/${p.user_id}`}>
+                    {p.avatar_url ? (
+                      <img
+                        src={p.avatar_url}
+                        alt={p.display_name || 'Participant'}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-sm font-bold text-blue-700">
+                        {(p.display_name || '?')[0].toUpperCase()}
+                      </span>
+                    )}
+                  </Link>
+                  <div>
+                    <Link href={`/profile/${p.user_id}`} className="font-medium text-blue-900 hover:underline">
+                      {p.display_name || 'Anonymous'}
+                    </Link>
+                    {p.user_id === post.user_id && (
+                      <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded">
+                        Organizer
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-sm text-blue-800">
                   {p.phone && (

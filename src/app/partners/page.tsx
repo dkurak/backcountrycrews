@@ -74,6 +74,7 @@ const ALL_EXPERIENCE_LEVELS: ExperienceLevel[] = ['beginner', 'intermediate', 'a
 interface Partner {
   id: string;
   display_name: string | null;
+  avatar_url: string | null;
   experience_level: string | null;
   fitness_level: string | null;
   certifications: string[] | null;
@@ -94,10 +95,18 @@ function PartnerCard({ partner }: { partner: Partner }) {
       className="block bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-gray-300 hover:shadow-md transition-all"
     >
       <div className="flex items-start gap-4">
-        {/* Avatar placeholder */}
-        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-500 flex-shrink-0">
-          {(partner.display_name || '?')[0].toUpperCase()}
-        </div>
+        {/* Avatar */}
+        {partner.avatar_url ? (
+          <img
+            src={partner.avatar_url}
+            alt={partner.display_name || 'Partner'}
+            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-bold text-gray-500 flex-shrink-0">
+            {(partner.display_name || '?')[0].toUpperCase()}
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
