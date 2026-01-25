@@ -79,9 +79,16 @@ export async function GET() {
       }
     }
 
+    // Filter out expired warnings
+    const now = new Date();
+    const activeWarnings = warnings.filter(w => {
+      if (!w.expiresTime) return true; // No expiry = still active
+      return new Date(w.expiresTime) > now;
+    });
+
     // Dedupe by zone (keep most recent/severe)
     const uniqueWarnings = Object.values(
-      warnings.reduce((acc, w) => {
+      activeWarnings.reduce((acc, w) => {
         const existing = acc[w.zoneId];
         if (!existing || w.dangerRating > existing.dangerRating) {
           acc[w.zoneId] = w;
