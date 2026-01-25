@@ -165,11 +165,12 @@ function groupTripsByMonth(trips: TourPost[]): MonthGroup[] {
   return Array.from(groups.values()).sort((a, b) => b.key.localeCompare(a.key));
 }
 
-function TourPostCard({ post, pendingCount }: { post: TourPost; pendingCount?: number }) {
+function TourPostCard({ post, pendingCount, currentUserId, showRoleBadge }: { post: TourPost; pendingCount?: number; currentUserId?: string; showRoleBadge?: boolean }) {
   const tourDate = new Date(post.tour_date + 'T12:00:00');
   const isToday = new Date().toISOString().split('T')[0] === post.tour_date;
   const isTomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0] === post.tour_date;
   const activity = post.activity || 'ski_tour';
+  const isOrganizer = currentUserId && post.user_id === currentUserId;
 
   return (
     <Link
@@ -184,6 +185,15 @@ function TourPostCard({ post, pendingCount }: { post: TourPost; pendingCount?: n
               {ACTIVITY_LABELS[activity]}
             </span>
             <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
+            {showRoleBadge && currentUserId && (
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                isOrganizer
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {isOrganizer ? 'Organizer' : 'Joined'}
+              </span>
+            )}
             {pendingCount && pendingCount > 0 && (
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                 {pendingCount} pending
@@ -664,7 +674,7 @@ export default function PartnersPage() {
                           <div className="text-sm font-medium text-gray-500 mb-2">{week.dateRange}</div>
                           <div className="space-y-3">
                             {week.trips.map((post) => (
-                              <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} />
+                              <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} showRoleBadge={showMyTrips} />
                             ))}
                           </div>
                         </div>
@@ -672,7 +682,7 @@ export default function PartnersPage() {
                     ) : (
                       // For this/next week, show trips directly
                       category.weeks.flatMap(w => w.trips).map((post) => (
-                        <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} />
+                        <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} showRoleBadge={showMyTrips} />
                       ))
                     )}
                   </div>
@@ -710,7 +720,7 @@ export default function PartnersPage() {
                 {isExpanded && (
                   <div className="p-4 space-y-4 bg-white">
                     {month.trips.map((post) => (
-                      <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} />
+                      <TourPostCard key={post.id} post={post} pendingCount={pendingCounts[post.id]} currentUserId={user?.id} showRoleBadge={showMyTrips} />
                     ))}
                   </div>
                 )}
