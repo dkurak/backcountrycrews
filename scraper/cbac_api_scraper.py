@@ -259,22 +259,33 @@ def parse_weather_data(weather_data: Dict) -> Optional[Dict[str, Any]]:
             elif dirs:
                 parsed['wind_direction'] = dirs[0]
 
-        # Snowfall - ONLY use properly prefixed 24hr value (not forecast ranges)
+        # Snowfall - extract prefixed 12hr/24hr values
+        # For ranges like "13 to 17", take the lower bound
+        def extract_snow_value(val: str) -> Optional[str]:
+            """Extract snowfall value, taking lower bound for ranges."""
+            if not val:
+                return None
+            val = val.strip()
+            # Handle ranges: "13 to 17" or "7 - 11"
+            if ' to ' in val:
+                val = val.split(' to ')[0].strip()
+            elif ' - ' in val:
+                val = val.split(' - ')[0].strip()
+            # Handle trace amounts
+            if val.lower() == 'tr' or val.lower() == 'trace':
+                return '0'
+            return val if val else None
+
         if 'snowfall' in result:
             snow_data = result['snowfall']
-            # The raw data has cells with 'prefix' field - look for 24hr: prefix
-            # Values like "7 - 11" without prefix are forecast ranges, not actuals
             for s in snow_data.get('values', []):
                 if isinstance(s, str):
                     if '24hr:' in s:
                         val = s.replace('24hr:', '').strip()
-                        # Only use if it's a clean number, not a range
-                        if val and ' - ' not in val and ' to ' not in val:
-                            parsed['snowfall_24hr'] = val
+                        parsed['snowfall_24hr'] = extract_snow_value(val)
                     elif '12hr:' in s:
                         val = s.replace('12hr:', '').strip()
-                        if val and ' - ' not in val and ' to ' not in val:
-                            parsed['snowfall_12hr'] = val
+                        parsed['snowfall_12hr'] = extract_snow_value(val)
 
         return parsed
 
