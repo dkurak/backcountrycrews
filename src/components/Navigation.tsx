@@ -116,8 +116,17 @@ export function Navigation() {
                     name={profile?.display_name || user.email}
                     size="xs"
                   />
-                  {profile?.display_name || 'Account'}
+                  {loading ? (
+                    <span className="w-16 h-4 bg-gray-700 rounded animate-pulse" />
+                  ) : (
+                    profile?.display_name || 'Account'
+                  )}
                 </Link>
+              ) : loading ? (
+                <span className="flex items-center gap-2 px-3 py-2">
+                  <span className="w-6 h-6 bg-gray-700 rounded-full animate-pulse" />
+                  <span className="w-16 h-4 bg-gray-700 rounded animate-pulse" />
+                </span>
               ) : (
                 <Link
                   href="/login"
@@ -214,8 +223,17 @@ export function Navigation() {
                     name={profile?.display_name || user.email}
                     size="xs"
                   />
-                  {profile?.display_name || 'My Account'}
+                  {loading ? (
+                    <span className="w-20 h-4 bg-gray-700 rounded animate-pulse" />
+                  ) : (
+                    profile?.display_name || 'My Account'
+                  )}
                 </Link>
+              ) : loading ? (
+                <span className="flex items-center gap-2 px-3 py-2">
+                  <span className="w-6 h-6 bg-gray-700 rounded-full animate-pulse" />
+                  <span className="w-20 h-4 bg-gray-700 rounded animate-pulse" />
+                </span>
               ) : (
                 <Link
                   href="/login"
