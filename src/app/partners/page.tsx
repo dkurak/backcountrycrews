@@ -227,10 +227,10 @@ export default function PartnersPage() {
                 <button
                   key={level}
                   onClick={() => toggleExperience(level)}
-                  className={`px-4 py-2 rounded-lg transition-all flex flex-col items-center ${
+                  className={`px-4 py-2 rounded-lg transition-all flex flex-col items-center ${EXPERIENCE_COLORS[level]} ${
                     isSelected
-                      ? `${EXPERIENCE_COLORS[level]} ring-2 ring-offset-1 ring-gray-400`
-                      : `${EXPERIENCE_COLORS[level]} opacity-70 hover:opacity-100`
+                      ? 'ring-2 ring-offset-1 ring-gray-400'
+                      : 'hover:ring-1 hover:ring-gray-300'
                   }`}
                 >
                   <div className="text-xs font-medium">{EXPERIENCE_LABELS[level]}</div>

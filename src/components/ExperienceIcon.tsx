@@ -9,7 +9,7 @@ interface ExperienceIconProps {
 export function ExperienceIcon({ level, size = 'sm', variant = 'default' }: ExperienceIconProps) {
   const sizeClass = size === 'lg' ? 'w-5 h-5' : 'w-4 h-4';
   // For advanced/expert diamonds on dark backgrounds, use white
-  const diamondColor = variant === 'light' ? 'text-white' : 'text-gray-900';
+  const diamondColor = variant === 'light' ? 'text-white' : 'text-black';
 
   switch (level) {
     case 'beginner':
