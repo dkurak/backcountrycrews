@@ -1,24 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-export async function POST(request: Request) {
-  // Simple auth check - require admin secret or check session
-  const authHeader = request.headers.get('authorization');
-  const adminSecret = process.env.ADMIN_SECRET;
-
-  // Allow if admin secret matches, or if no secret is set (dev mode)
-  if (adminSecret && authHeader !== `Bearer ${adminSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function POST() {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json({ error: 'Missing Supabase credentials' }, { status: 500 });
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   // Get all tour posts with open or full status
   const { data: trips, error: tripsError } = await supabase
@@ -80,12 +66,10 @@ export async function POST(request: Request) {
 }
 
 // GET to preview what would be fixed (dry run)
-export async function GET(request: Request) {
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json({ error: 'Missing Supabase credentials' }, { status: 500 });
+export async function GET() {
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   // Get all tour posts with open or full status
   const { data: trips, error: tripsError } = await supabase
