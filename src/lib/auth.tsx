@@ -65,12 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('fetchProfile: fetching for userId:', userId);
     const startTime = Date.now();
 
-    // Add timeout to profile fetch - 30s to allow for slow Supabase reconnection after hard refresh
+    // Add timeout to profile fetch - 45s to allow for slow Supabase reconnection after hard refresh
+    // Free tier Vercel/Supabase can take 30+ seconds on cold start
     const timeoutPromise = new Promise<null>((resolve) => {
       setTimeout(() => {
-        console.error('fetchProfile: TIMEOUT after 30s');
+        console.error('fetchProfile: TIMEOUT after 45s');
         resolve(null);
-      }, 30000);
+      }, 45000);
     });
 
     const fetchPromise = (async () => {
@@ -86,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const result = await Promise.race([
       fetchPromise,
-      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out after 30s') }))
+      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out after 45s') }))
     ]);
 
     if (!result || result.data === null) {
@@ -148,14 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
 
-    // Timeout to prevent infinite loading - 35 seconds
-    // Hard refresh can cause Supabase to take 10+ seconds to reconnect and refresh tokens
+    // Timeout to prevent infinite loading - 50 seconds
+    // Hard refresh can cause Supabase to take 30+ seconds to reconnect on free tier
     const timeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth initialization timed out after 35s');
+        console.warn('Auth initialization timed out after 50s');
         setLoading(false);
       }
-    }, 35000);
+    }, 50000);
 
     // Get initial session
     supabase.auth.getSession()
@@ -170,7 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         if (session?.user) {
           const profileData = await fetchProfile(session.user.id);
-          if (mounted) setProfile(profileData);
+          // Only update profile if we got data - don't overwrite existing profile with null from timeout
+          if (mounted && profileData) setProfile(profileData);
         }
         if (mounted) setLoading(false);
       })
@@ -188,8 +190,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (session?.user) {
           const profileData = await fetchProfile(session.user.id);
-          if (mounted) setProfile(profileData);
+          // Only update profile if we got data - don't overwrite existing profile with null from timeout
+          if (mounted && profileData) setProfile(profileData);
         } else {
+          // Only clear profile when there's explicitly no session (sign out)
           setProfile(null);
         }
 
