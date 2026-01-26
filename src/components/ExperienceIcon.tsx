@@ -34,9 +34,9 @@ export function ExperienceIcon({ level, size = 'sm', variant = 'default' }: Expe
         </svg>
       );
     case 'expert':
-      // Double black diamond (two side-by-side diamonds)
+      // Double black diamond (two side-by-side diamonds, tightly spaced)
       return (
-        <span className="inline-flex gap-0.5">
+        <span className="inline-flex -space-x-1">
           <svg className={sizeClass} viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L22 12L12 22L2 12L12 2Z" className={diamondColor} />
           </svg>

@@ -13,8 +13,8 @@ export const EXPERIENCE_LABELS: Record<string, string> = {
 export const EXPERIENCE_COLORS: Record<string, string> = {
   beginner: 'bg-green-100 text-green-700',
   intermediate: 'bg-blue-100 text-blue-700',
-  advanced: 'bg-gray-900 text-white',
-  expert: 'bg-gray-900 text-white',
+  advanced: 'bg-gray-200 text-gray-900',
+  expert: 'bg-gray-200 text-gray-900',
 };
 
 // Fitness levels
