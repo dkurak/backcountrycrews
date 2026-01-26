@@ -65,12 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('fetchProfile: fetching for userId:', userId);
     const startTime = Date.now();
 
-    // Add timeout to profile fetch
+    // Add timeout to profile fetch - 30s to allow for slow Supabase reconnection after hard refresh
     const timeoutPromise = new Promise<null>((resolve) => {
       setTimeout(() => {
-        console.error('fetchProfile: TIMEOUT after 10s');
+        console.error('fetchProfile: TIMEOUT after 30s');
         resolve(null);
-      }, 10000);
+      }, 30000);
     });
 
     const fetchPromise = (async () => {
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const result = await Promise.race([
       fetchPromise,
-      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out') }))
+      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out after 30s') }))
     ]);
 
     if (!result || result.data === null) {
@@ -148,14 +148,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
 
-    // Timeout to prevent infinite loading - increased to 15 seconds
-    // Hard refresh can cause Supabase to take longer to reconnect
+    // Timeout to prevent infinite loading - 35 seconds
+    // Hard refresh can cause Supabase to take 10+ seconds to reconnect and refresh tokens
     const timeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth initialization timed out after 15s');
+        console.warn('Auth initialization timed out after 35s');
         setLoading(false);
       }
-    }, 15000);
+    }, 35000);
 
     // Get initial session
     supabase.auth.getSession()
