@@ -10,7 +10,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,           // Store session in localStorage (default, but explicit)
+        autoRefreshToken: true,         // Auto-refresh before expiry (default, but explicit)
+        detectSessionInUrl: true,       // Handle OAuth redirects
+        storageKey: 'backcountrycrews-auth',  // Custom key to avoid conflicts
+      },
+    })
   : null;
 
 export const isSupabaseConfigured = !!supabase;
