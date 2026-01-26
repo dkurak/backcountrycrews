@@ -115,18 +115,23 @@ export default function CombinedForecastPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Compare Zones</h1>
-          <p className="text-gray-500">Northwest and Southeast forecasts side-by-side</p>
-        </div>
+      {/* Zone selector - matching forecast page style */}
+      <div className="flex items-center gap-2">
         <Link
-          href="/forecast"
-          className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+          href="/forecast?zone=southeast"
+          className="px-4 py-2 rounded-lg font-medium transition-colors bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
         >
-          Single zone view
+          Southeast
         </Link>
+        <Link
+          href="/forecast?zone=northwest"
+          className="px-4 py-2 rounded-lg font-medium transition-colors bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+        >
+          Northwest
+        </Link>
+        <span className="px-4 py-2 rounded-lg font-medium bg-gray-900 text-white">
+          Compare
+        </span>
       </div>
 
       {/* Avalanche Warning Banner (both zones) */}

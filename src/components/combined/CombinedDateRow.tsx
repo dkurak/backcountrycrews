@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Forecast } from '@/types/forecast';
 import { ZoneForecastCell } from './ZoneForecastCell';
 
@@ -35,17 +36,23 @@ export function CombinedDateRow({ date, northwest, southeast }: CombinedDateRowP
           <span className="text-xs text-gray-500">{monthDay}</span>
         </div>
 
-        {/* Northwest cell */}
-        <div className="border-l border-gray-200 pl-4">
+        {/* Northwest cell - clickable */}
+        <Link
+          href="/forecast?zone=northwest"
+          className="border-l border-gray-200 pl-4 hover:bg-gray-50 -ml-4 -my-3 py-3 pl-4 rounded-r transition-colors"
+        >
           <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Northwest</div>
           <ZoneForecastCell forecast={northwest} zoneName="Northwest" />
-        </div>
+        </Link>
 
-        {/* Southeast cell */}
-        <div className="border-l border-gray-200 pl-4">
+        {/* Southeast cell - clickable */}
+        <Link
+          href="/forecast?zone=southeast"
+          className="border-l border-gray-200 pl-4 hover:bg-gray-50 -my-3 py-3 rounded-r transition-colors"
+        >
           <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Southeast</div>
           <ZoneForecastCell forecast={southeast} zoneName="Southeast" />
-        </div>
+        </Link>
       </div>
 
       {/* Mobile layout - stacked */}
@@ -55,17 +62,23 @@ export function CombinedDateRow({ date, northwest, southeast }: CombinedDateRowP
           {isToday ? 'Today' : dayName}, {monthDay}
         </div>
 
-        {/* Northwest */}
-        <div>
+        {/* Northwest - clickable */}
+        <Link
+          href="/forecast?zone=northwest"
+          className="block hover:bg-gray-50 -mx-3 px-3 py-2 rounded transition-colors"
+        >
           <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">NW</div>
           <ZoneForecastCell forecast={northwest} zoneName="Northwest" />
-        </div>
+        </Link>
 
-        {/* Southeast */}
-        <div>
+        {/* Southeast - clickable */}
+        <Link
+          href="/forecast?zone=southeast"
+          className="block hover:bg-gray-50 -mx-3 px-3 py-2 rounded transition-colors"
+        >
           <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">SE</div>
           <ZoneForecastCell forecast={southeast} zoneName="Southeast" />
-        </div>
+        </Link>
       </div>
     </div>
   );

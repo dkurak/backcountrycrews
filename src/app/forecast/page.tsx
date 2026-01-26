@@ -730,9 +730,9 @@ function ForecastContent() {
         </button>
         <Link
           href="/forecast/combined"
-          className="ml-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+          className="px-4 py-2 rounded-lg font-medium transition-colors bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
         >
-          Compare Zones
+          Compare
         </Link>
       </div>
 
