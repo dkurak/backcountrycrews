@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user profile
+  // Fetch user profile with timeout
   const fetchProfile = async (userId: string) => {
     if (!supabase) {
       console.error('fetchProfile: supabase client is null');
@@ -63,19 +63,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     console.log('fetchProfile: fetching for userId:', userId);
+    const startTime = Date.now();
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    // Add timeout to profile fetch
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => {
+        console.error('fetchProfile: TIMEOUT after 10s');
+        resolve(null);
+      }, 10000);
+    });
+
+    const fetchPromise = (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      console.log('fetchProfile: query completed in', Date.now() - startTime, 'ms');
+      return { data, error };
+    })();
+
+    const result = await Promise.race([
+      fetchPromise,
+      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out') }))
+    ]);
+
+    if (!result || result.data === null) {
+      if (result?.error) {
+        console.error('fetchProfile: error:', result.error);
+      }
+      return null;
+    }
+
+    const { data, error } = result;
 
     if (error) {
       console.error('Error fetching profile:', error);
-      console.error('Error details:', { code: error.code, message: error.message, details: error.details });
+      const errorCode = 'code' in error ? (error as { code?: string }).code : undefined;
+      const errorDetails = 'details' in error ? (error as { details?: string }).details : undefined;
+      console.error('Error details:', { code: errorCode, message: error.message, details: errorDetails });
 
       // Check if this is an auth error - token might be invalid
-      if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
+      if (errorCode === 'PGRST301' || error.message?.includes('JWT')) {
         console.error('Auth token may be invalid, attempting to refresh session...');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
