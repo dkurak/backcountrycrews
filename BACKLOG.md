@@ -116,6 +116,10 @@ _Features prioritized for upcoming work_
 ## Done
 _Shipped features (for reference)_
 
+- [x] **Combined Zones View** (Jan 2025)
+  - Side-by-side comparison of NW/SE forecasts at /forecast/combined
+  - Each date row shows danger pyramid, problem roses, weather info
+  - Responsive: side-by-side on desktop, stacked on mobile
 - [x] **Activity Type Support** (Jan 2025)
   - Activity enum and details JSONB on tour_posts
   - Meeting points support multiple activity types

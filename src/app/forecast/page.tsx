@@ -707,7 +707,7 @@ function ForecastContent() {
   return (
     <div className="space-y-6">
       {/* Zone selector */}
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => handleZoneChange('southeast')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -728,6 +728,12 @@ function ForecastContent() {
         >
           Northwest
         </button>
+        <Link
+          href="/forecast/combined"
+          className="ml-2 text-sm text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          Compare Zones
+        </Link>
       </div>
 
       {/* Tab selector */}
