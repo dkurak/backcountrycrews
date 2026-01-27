@@ -534,7 +534,7 @@ export default function TourPostPage() {
             >
               Edit Trip
             </Link>
-            {post.status === 'open' && participants.length > 0 && (
+            {post.status === 'open' && (
               <button
                 onClick={() => handleStatusChange('confirmed')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"

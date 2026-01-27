@@ -210,7 +210,7 @@ export default function ProfilePage() {
         </div>
         <button
           onClick={handleSignOut}
-          className="text-sm text-gray-600 hover:text-gray-900"
+          className="text-sm text-gray-600 hover:text-gray-900 hover:underline cursor-pointer"
         >
           Sign Out
         </button>
