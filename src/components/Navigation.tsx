@@ -12,6 +12,7 @@ const navItems = [
   { href: '/forecast', label: 'Forecast' },
   { href: '/trips', label: 'Trips' },
   { href: '/partners', label: 'Partners' },
+  { href: '/field-guide', label: 'Field Guide' },
 ];
 
 export function Navigation() {
