@@ -43,6 +43,8 @@ export default function VehicleRecoveryPage() {
               <li><strong>Hi-lift jack</strong> (versatile but learn to use it safely first)</li>
               <li><strong>Tire deflator</strong> and <strong>air compressor</strong></li>
               <li><strong>Tow hitch receiver</strong> with shackle mount</li>
+              <li><strong><Link href="/field-guide/radio-channels" className="text-blue-600 hover:underline">GMRS/FRS radio</Link></strong> (communicate between vehicles)</li>
+              <li><strong><Link href="/field-guide/satellite-sos" className="text-blue-600 hover:underline">Satellite communicator</Link></strong> (no cell service on most roads)</li>
             </ul>
           </div>
         </div>
@@ -148,12 +150,23 @@ export default function VehicleRecoveryPage() {
             Know your vehicle&apos;s clearance and don&apos;t push past where you can safely turn around.
           </p>
           <p>
-            <strong>Cell service:</strong> Limited to nonexistent on most backcountry roads. Tell someone your plan,
-            carry a satellite communicator, and don&apos;t rely on calling for help.
+            <strong>Cell service:</strong> Limited to nonexistent on most backcountry roads. Tell someone your plan
+            and don&apos;t rely on calling for help. Carry a{' '}
+            <Link href="/field-guide/radio-channels" className="text-blue-600 hover:underline">GMRS/FRS radio</Link>{' '}
+            for communicating between vehicles and a{' '}
+            <Link href="/field-guide/satellite-sos" className="text-blue-600 hover:underline">satellite communicator</Link>{' '}
+            for true emergencies.
           </p>
           <p>
             <strong>Travel in pairs:</strong> Two vehicles means you always have a recovery option. Solo backcountry driving
-            is significantly riskier.
+            is significantly riskier. Radios let you coordinate between vehicles on the trail &mdash; agree on a{' '}
+            <Link href="/field-guide/radio-channels" className="text-blue-600 hover:underline">channel</Link>{' '}
+            before you head out.
+          </p>
+          <p>
+            <strong>Find a buddy:</strong> Don&apos;t have a second vehicle?{' '}
+            <Link href="/trips" className="text-blue-600 hover:underline">Browse upcoming trips</Link>{' '}
+            or post your own to find people heading the same direction.
           </p>
         </div>
       </section>
