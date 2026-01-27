@@ -83,7 +83,8 @@ export interface TourResponse {
   tour_id: string;
   user_id: string;
   message: string | null;
-  status: 'pending' | 'accepted' | 'declined';
+  status: 'pending' | 'accepted' | 'declined' | 'withdrawn';
+  withdrawal_message: string | null;
   created_at: string;
   // Joined profile data
   profiles?: {
@@ -138,7 +139,7 @@ export interface TourFilters {
 export interface UserNotification {
   id: string;
   user_id: string;
-  type: 'trip_accepted' | 'trip_confirmed';
+  type: 'trip_accepted' | 'trip_confirmed' | 'participant_withdrawn';
   trip_id: string;
   message: string;
   is_read: boolean;
@@ -610,12 +611,13 @@ export async function createTourResponse(
 
   const { error } = await supabase
     .from('tour_responses')
-    .insert({
+    .upsert({
       tour_id: tourId,
       user_id: userId,
       message: message || null,
       status: 'pending',
-    });
+      withdrawal_message: null,
+    }, { onConflict: 'tour_id,user_id' });
 
   return { error: error as unknown as Error | null };
 }
@@ -695,6 +697,114 @@ export async function updateTourResponseStatus(
         trip_id: response.tour_id,
         message: `You've been accepted to "${trip.title}"!`,
       });
+    }
+  }
+
+  return { error: null };
+}
+
+// Withdraw from a tour (self-removal by participant)
+export async function withdrawFromTrip(
+  tourId: string,
+  userId: string,
+  withdrawalMessage: string,
+  notifyParticipants: boolean = true
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  // 1. Get the user's current response
+  const { data: response, error: fetchError } = await supabase
+    .from('tour_responses')
+    .select('id, status')
+    .eq('tour_id', tourId)
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError || !response) {
+    return { error: new Error('Response not found') };
+  }
+
+  if (response.status !== 'pending' && response.status !== 'accepted') {
+    return { error: new Error('Cannot withdraw from this status') };
+  }
+
+  const wasAccepted = response.status === 'accepted';
+
+  // 2. Update the response to 'withdrawn'
+  const { error: updateError } = await supabase
+    .from('tour_responses')
+    .update({
+      status: 'withdrawn',
+      withdrawal_message: withdrawalMessage || null,
+    })
+    .eq('id', response.id);
+
+  if (updateError) {
+    return { error: updateError as unknown as Error };
+  }
+
+  // 3. Get trip info for notifications and spot management
+  const { data: trip } = await supabase
+    .from('tour_posts')
+    .select('title, spots_available, status, user_id')
+    .eq('id', tourId)
+    .single();
+
+  // 4. If was accepted, free up a spot
+  if (trip && wasAccepted) {
+    const newSpots = trip.spots_available + 1;
+    const newTripStatus = trip.status === 'full' ? 'open' : trip.status;
+
+    await supabase
+      .from('tour_posts')
+      .update({
+        spots_available: newSpots,
+        status: newTripStatus,
+      })
+      .eq('id', tourId);
+  }
+
+  if (!trip) {
+    return { error: null };
+  }
+
+  // 5. Get the withdrawing user's display name
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', userId)
+    .single();
+
+  const displayName = profile?.display_name || 'A participant';
+
+  // 6. Always notify the organizer
+  await supabase.from('notifications').insert({
+    user_id: trip.user_id,
+    type: 'participant_withdrawn',
+    trip_id: tourId,
+    message: `${displayName} has withdrawn from "${trip.title}".`,
+  });
+
+  // 7. Optionally notify other accepted participants
+  if (notifyParticipants) {
+    const { data: otherParticipants } = await supabase
+      .from('tour_responses')
+      .select('user_id')
+      .eq('tour_id', tourId)
+      .eq('status', 'accepted')
+      .neq('user_id', userId);
+
+    if (otherParticipants && otherParticipants.length > 0) {
+      const notifications = otherParticipants.map((p) => ({
+        user_id: p.user_id,
+        type: 'participant_withdrawn' as const,
+        trip_id: tourId,
+        message: `${displayName} has withdrawn from "${trip.title}".`,
+      }));
+
+      await supabase.from('notifications').insert(notifications);
     }
   }
 

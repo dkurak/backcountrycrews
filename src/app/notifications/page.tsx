@@ -43,14 +43,24 @@ function NotificationCard({
     <div className={`relative bg-white rounded-lg border p-4 transition-all ${
       notification.is_read
         ? 'border-gray-200'
-        : 'border-blue-200 bg-blue-50/50'
+        : notification.type === 'participant_withdrawn'
+          ? 'border-orange-200 bg-orange-50/50'
+          : 'border-blue-200 bg-blue-50/50'
     }`}>
       <Link href={`/trips/${notification.trip_id}`} className="block">
         <div className="flex items-start gap-3">
-          <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl ${ACTIVITY_COLORS[activity]}`}>
+          <span className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-xl ${
+            notification.type === 'participant_withdrawn'
+              ? 'bg-orange-100 text-orange-600'
+              : ACTIVITY_COLORS[activity]
+          }`}>
             {notification.type === 'trip_accepted' ? (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : notification.type === 'participant_withdrawn' ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
               </svg>
             ) : (
               <span>{ACTIVITY_ICONS[activity]}</span>

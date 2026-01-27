@@ -16,6 +16,7 @@ import {
   updateTourStatus,
   updateTourPlanningNotes,
   deleteTourPost,
+  withdrawFromTrip,
   TourPost,
   TourResponse,
   TourParticipant,
@@ -138,11 +139,16 @@ export default function TourPostPage() {
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawMessage, setWithdrawMessage] = useState('');
+  const [notifyOthers, setNotifyOthers] = useState(true);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const isOwner = user && post && user.id === post.user_id;
   const userResponse = responses.find((r) => r.user_id === user?.id);
   const isAccepted = userResponse?.status === 'accepted';
   const isPending = userResponse?.status === 'pending';
+  const isWithdrawn = userResponse?.status === 'withdrawn';
   const hasResponded = !!userResponse;
   const isParticipant = isOwner || isAccepted;
   const isConfirmed = post?.status === 'confirmed' || post?.status === 'completed';
@@ -290,6 +296,45 @@ export default function TourPostPage() {
       setTimeout(() => setSuccess(null), 2000);
     }
     setIsSavingNotes(false);
+  };
+
+  const handleWithdraw = async () => {
+    if (!user || !post || !userResponse) return;
+
+    setIsWithdrawing(true);
+    setError(null);
+
+    const { error: withdrawError } = await withdrawFromTrip(
+      post.id,
+      user.id,
+      withdrawMessage,
+      notifyOthers
+    );
+
+    if (withdrawError) {
+      setError(withdrawError.message);
+    } else {
+      setSuccess(
+        userResponse.status === 'accepted'
+          ? 'You have left this trip.'
+          : 'Your interest has been withdrawn.'
+      );
+      setShowWithdrawModal(false);
+      setWithdrawMessage('');
+      setNotifyOthers(true);
+      // Refresh data
+      const [postData, responseData, participantData] = await Promise.all([
+        getTourPost(post.id),
+        getTourResponses(post.id),
+        getTourParticipants(post.id),
+      ]);
+      setPost(postData);
+      setResponses(responseData);
+      setParticipants(participantData);
+      setTimeout(() => setSuccess(null), 3000);
+    }
+
+    setIsWithdrawing(false);
   };
 
   if (loading || authLoading) {
@@ -568,28 +613,62 @@ export default function TourPostPage() {
       {/* You're In! (for accepted participants) */}
       {!isOwner && isAccepted && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl">✓</span>
-            <h2 className="text-lg font-semibold text-green-800">You&apos;re In!</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">✓</span>
+                <h2 className="text-lg font-semibold text-green-800">You&apos;re In!</h2>
+              </div>
+              <p className="text-green-700">
+                You&apos;ve been accepted to this trip. Check back for updates from the organizer.
+              </p>
+            </div>
+            {!isPast && (
+              <button
+                onClick={() => setShowWithdrawModal(true)}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+              >
+                Leave Trip
+              </button>
+            )}
           </div>
-          <p className="text-green-700">
-            You&apos;ve been accepted to this trip. Check back for updates from the organizer.
-          </p>
         </div>
       )}
 
       {/* Pending response */}
       {!isOwner && isPending && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-yellow-800 mb-2">Interest Submitted</h2>
-          <p className="text-yellow-700">
-            Your request is pending. The organizer will review and respond.
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-yellow-800 mb-2">Interest Submitted</h2>
+              <p className="text-yellow-700">
+                Your request is pending. The organizer will review and respond.
+              </p>
+            </div>
+            {!isPast && (
+              <button
+                onClick={() => setShowWithdrawModal(true)}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+              >
+                Withdraw Interest
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Withdrawn status */}
+      {!isOwner && isWithdrawn && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-gray-600 mb-2">Withdrawn</h2>
+          <p className="text-gray-500">
+            You previously withdrew from this trip.
           </p>
         </div>
       )}
 
-      {/* Express interest (for non-owners who haven't responded) */}
-      {!isOwner && !isPast && !hasResponded && post.status === 'open' && (
+      {/* Express interest (for non-owners who haven't responded, or who withdrew) */}
+      {!isOwner && !isPast && (!hasResponded || isWithdrawn) && post.status === 'open' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Interested in Joining?
@@ -671,6 +750,11 @@ export default function TourPostPage() {
                   {response.message && (
                     <p className="text-sm text-gray-700 mt-2">{response.message}</p>
                   )}
+                  {response.withdrawal_message && (
+                    <p className="text-sm text-orange-600 mt-1 italic">
+                      Withdrawal note: {response.withdrawal_message}
+                    </p>
+                  )}
                 </div>
                 <div className="flex-shrink-0">
                   {response.status === 'pending' ? (
@@ -693,7 +777,9 @@ export default function TourPostPage() {
                       className={`px-3 py-1 rounded text-sm font-medium ${
                         response.status === 'accepted'
                           ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-500'
+                          : response.status === 'withdrawn'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-gray-100 text-gray-500'
                       }`}
                     >
                       {response.status.charAt(0).toUpperCase() + response.status.slice(1)}
@@ -855,6 +941,73 @@ export default function TourPostPage() {
             >
               {isSendingMessage ? '...' : 'Send'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Withdraw Confirmation Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              {isAccepted ? 'Leave This Trip?' : 'Withdraw Interest?'}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              {isAccepted
+                ? 'You will lose your spot and the organizer will be notified.'
+                : 'Your pending request will be withdrawn and the organizer will be notified.'}
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Message (optional)
+                </label>
+                <textarea
+                  value={withdrawMessage}
+                  onChange={(e) => setWithdrawMessage(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                  placeholder="Let the group know why you're withdrawing..."
+                />
+              </div>
+
+              {isAccepted && (
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={notifyOthers}
+                    onChange={(e) => setNotifyOthers(e.target.checked)}
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                  />
+                  Notify other participants
+                </label>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowWithdrawModal(false);
+                  setWithdrawMessage('');
+                  setNotifyOthers(true);
+                }}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWithdraw}
+                disabled={isWithdrawing}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isWithdrawing
+                  ? 'Withdrawing...'
+                  : isAccepted
+                    ? 'Leave Trip'
+                    : 'Withdraw Interest'}
+              </button>
+            </div>
           </div>
         </div>
       )}
