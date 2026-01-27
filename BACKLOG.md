@@ -97,12 +97,35 @@ _Features prioritized for upcoming work_
   - See patterns: which zones, conditions, partners
   - Tie to forecast conditions for that day
 
-- [ ] **Trip Gear Checklist**
-  - Personalized gear checklists for confirmed trips
-  - Participants can check off items they're bringing
-  - Example items: emergency blanket, tarp, extra layers, headlamp, repair kit
-  - Could be per-trip or reusable user template
-  - Consider shared checklist so group can coordinate who's bringing what
+- [ ] **Trip Confirmation & Planning Mode**
+  - Trip lifecycle: Proposed → On → (Planning) → Completed
+
+  **Confirm Trip (Organizer action)**
+  - Manual "Confirm Trip" / "Trip is On" button for organizer
+  - Notifies all accepted participants (in-app, future: email option)
+  - Visual indicators:
+    - Banner on trip detail page: "This trip is ON!"
+    - Badge/tag on trip cards in listings
+  - Unlocks planning features below
+
+  **The Brief (AIARE-style pre-trip planning)**
+  - Structured discussion framework for the group
+  - Elements (refine from AIARE field book):
+    - Conditions summary (pull from forecast if available)
+    - The plan: route, objectives, timing
+    - Hazard awareness / mental model
+    - Turn-around criteria
+    - Emergency plan / communication protocol
+  - TODO: Reference AIARE field book for exact structure
+
+  **Gear Coordination**
+  - Essentials (radio, satellite, first aid):
+    - Pre-filled from user profile settings
+    - Requires conscious confirmation per trip (not auto-assumed)
+  - Shared items checklist:
+    - Group list: emergency blanket, tarp, extra layers, headlamp, repair kit, etc.
+    - Each participant indicates what they're bringing
+    - Visual indicator for gaps (e.g., "nobody bringing a tarp?")
 
 ### Content
 
