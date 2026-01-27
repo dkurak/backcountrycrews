@@ -116,7 +116,18 @@ _Features prioritized for upcoming work_
     - Hazard awareness / mental model
     - Turn-around criteria
     - Emergency plan / communication protocol
+  - Include Quick Trip Plan template (from /field-guide/solo-safety) as a fillable form
+    - Pre-populate fields from trip details (destination, trailhead, date, participants)
+    - Participants can copy/send to their emergency contacts
   - TODO: Reference AIARE field book for exact structure
+
+- [ ] **Emergency Contacts on Profile**
+  - Users can add 1+ emergency contacts to their profile
+  - Fields: name, phone number, relationship (e.g. spouse, parent, friend)
+  - Visible to trip partners — so if something goes wrong, the group knows who to call
+  - Optional: per-trip override (different contact for different trips)
+  - Privacy: only shown to accepted participants on shared trips, not publicly visible
+  - Ties into The Brief / trip planning — pre-populate the "who to call" field
 
 - [ ] **Gear Coordination**
   - Essentials (radio, satellite, first aid):
