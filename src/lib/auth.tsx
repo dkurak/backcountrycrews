@@ -68,6 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Track ongoing profile fetch to prevent duplicates
   const fetchingProfileRef = useRef<string | null>(null);
   const profileCacheRef = useRef<{ userId: string; profile: Profile; timestamp: number } | null>(null);
+  // Track whether initial load is complete - skip onAuthStateChange profile fetches until then
+  const initialLoadCompleteRef = useRef(false);
 
   // Fetch user profile with timeout and deduplication
   const fetchProfile = async (userId: string) => {
@@ -93,13 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('fetchProfile: fetching for userId:', userId);
     const startTime = Date.now();
 
-    // Add timeout to profile fetch - 45s to allow for slow Supabase reconnection after hard refresh
-    // Free tier Vercel/Supabase can take 30+ seconds on cold start
+    // Add timeout to profile fetch - 10s should be plenty
     const timeoutPromise = new Promise<null>((resolve) => {
       setTimeout(() => {
-        console.error('fetchProfile: TIMEOUT after 45s');
+        console.error('fetchProfile: TIMEOUT after 10s');
         resolve(null);
-      }, 45000);
+      }, 10000);
     });
 
     const fetchPromise = (async () => {
@@ -115,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const result = await Promise.race([
       fetchPromise,
-      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out after 45s') }))
+      timeoutPromise.then(() => ({ data: null, error: new Error('Profile fetch timed out after 10s') }))
     ]);
 
     if (!result || result.data === null) {
@@ -188,14 +189,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
 
-    // Timeout to prevent infinite loading - 50 seconds
-    // Hard refresh can cause Supabase to take 30+ seconds to reconnect on free tier
+    // Timeout to prevent infinite loading - 15 seconds max
     const timeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth initialization timed out after 50s');
+        console.warn('Auth initialization timed out after 15s');
+        initialLoadCompleteRef.current = true;
         setLoading(false);
       }
-    }, 50000);
+    }, 15000);
 
     // Get initial session
     supabase.auth.getSession()
@@ -213,6 +214,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Only update profile if we got data - don't overwrite existing profile with null from timeout
           if (mounted && profileData) setProfile(profileData);
         }
+        // Mark initial load complete - onAuthStateChange can now fetch profiles
+        initialLoadCompleteRef.current = true;
         if (mounted) setLoading(false);
       })
       .catch((err) => {
@@ -225,14 +228,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event: AuthChangeEvent, session: Session | null) => {
         if (!mounted) return;
 
-        // Skip INITIAL_SESSION - we handle that with getSession() above
-        // This prevents duplicate profile fetches on page load
-        if (event === 'INITIAL_SESSION') {
-          console.log('onAuthStateChange: skipping INITIAL_SESSION (handled by getSession)');
+        console.log('onAuthStateChange:', event);
+
+        // During initial load, only update session/user state - let getSession() handle the profile fetch
+        // This prevents duplicate/hung requests from SIGNED_IN or INITIAL_SESSION events
+        if (!initialLoadCompleteRef.current) {
+          console.log('onAuthStateChange: skipping profile fetch during initial load');
+          setSession(session);
+          setUser(session?.user ?? null);
           return;
         }
 
-        console.log('onAuthStateChange:', event);
         setSession(session);
         setUser(session?.user ?? null);
 
