@@ -498,17 +498,38 @@ export async function createTourPost(
 
 // Update a tour post
 export async function updateTourPost(
-  id: string,
+  idOrShortId: string,
   updates: Partial<TourPost>
 ): Promise<{ error: Error | null }> {
   if (!supabase) {
     return { error: new Error('Supabase not configured') };
   }
 
+  // Check if it's a full UUID
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isFullUuid = uuidPattern.test(idOrShortId);
+
+  if (isFullUuid) {
+    // Full UUID - update directly
+    const { error } = await supabase
+      .from('tour_posts')
+      .update(updates)
+      .eq('id', idOrShortId);
+
+    return { error: error as unknown as Error | null };
+  }
+
+  // Short ID or slug - first find the full UUID
+  const trip = await getTourPost(idOrShortId);
+  if (!trip) {
+    return { error: new Error('Trip not found') };
+  }
+
+  // Update using the full UUID
   const { error } = await supabase
     .from('tour_posts')
     .update(updates)
-    .eq('id', id);
+    .eq('id', trip.id);
 
   return { error: error as unknown as Error | null };
 }
