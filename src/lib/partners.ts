@@ -512,7 +512,7 @@ export async function getJoinedTripIds(userId: string): Promise<Set<string>> {
 // Create a tour post
 export async function createTourPost(
   userId: string,
-  post: Omit<TourPost, 'id' | 'user_id' | 'slug' | 'status' | 'created_at' | 'updated_at' | 'profiles' | 'planning_notes' | 'accepted_count'>
+  post: Omit<TourPost, 'id' | 'user_id' | 'slug' | 'status' | 'created_at' | 'updated_at' | 'profiles' | 'planning_notes' | 'accepted_count' | 'trip_report' | 'report_submitted_at' | 'pending_count'>
 ): Promise<{ data: TourPost | null; error: Error | null }> {
   if (!supabase) {
     return { data: null, error: new Error('Supabase not configured') };
