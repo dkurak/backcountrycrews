@@ -43,6 +43,49 @@ export const ACTIVITY_ICONS: Record<ActivityType, string> = {
   climb: '🧗',
 };
 
+// Trip Report Types
+export interface SkiTourConditions {
+  snow_quality?: 'powder' | 'crud' | 'corn' | 'ice' | 'variable';
+  dangers_noticed?: string;
+  skintrack_condition?: 'excellent' | 'good' | 'fair' | 'poor' | 'not_established';
+  descent_quality?: 'excellent' | 'good' | 'fair' | 'poor' | 'unskiable';
+}
+
+export interface OffroadConditions {
+  trail_condition?: 'excellent' | 'good' | 'muddy' | 'washed_out';
+  obstacles?: string;
+  difficulty_rating?: 'easier_than_expected' | 'as_expected' | 'harder_than_expected';
+}
+
+export interface MountainBikeConditions {
+  trail_condition?: 'tacky' | 'dry' | 'dusty' | 'muddy' | 'wet';
+  obstacles?: string;
+}
+
+export interface HikeConditions {
+  trail_condition?: 'clear' | 'overgrown' | 'muddy' | 'snow';
+  obstacles?: string;
+}
+
+export interface ClimbConditions {
+  route_condition?: 'excellent' | 'good' | 'fair' | 'poor';
+  rock_quality?: 'solid' | 'loose' | 'variable';
+  difficulty_rating?: 'easier_than_expected' | 'as_expected' | 'harder_than_expected';
+}
+
+export type ActivityConditions =
+  | SkiTourConditions
+  | OffroadConditions
+  | MountainBikeConditions
+  | HikeConditions
+  | ClimbConditions;
+
+export interface TripReport {
+  overall_rating: 1 | 2 | 3 | 4 | 5;
+  summary: string;
+  conditions: ActivityConditions;
+}
+
 export interface TourPost {
   id: string;
   user_id: string;
@@ -63,6 +106,8 @@ export interface TourPost {
   activity: ActivityType;
   activity_details: Record<string, unknown> | null;
   planning_notes: string | null;
+  trip_report: TripReport | null;
+  report_submitted_at: string | null;
   created_at: string;
   updated_at: string;
   // Joined profile data
@@ -1102,6 +1147,26 @@ export async function updateAttendance(
   }
 
   return { error: null };
+}
+
+// Submit or update trip report
+export async function submitTripReport(
+  tourId: string,
+  report: TripReport
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  const { error } = await supabase
+    .from('tour_posts')
+    .update({
+      trip_report: report as unknown as Record<string, unknown>,
+      report_submitted_at: new Date().toISOString(),
+    })
+    .eq('id', tourId);
+
+  return { error: error as unknown as Error | null };
 }
 
 // ===== Notification Functions =====

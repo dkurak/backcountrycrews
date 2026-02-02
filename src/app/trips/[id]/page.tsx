@@ -18,11 +18,13 @@ import {
   deleteTourPost,
   withdrawFromTrip,
   updateAttendance,
+  submitTripReport,
   TourPost,
   TourResponse,
   TourParticipant,
   TourParticipantWithContact,
   TourMessage,
+  TripReport,
   ACTIVITY_LABELS,
   ACTIVITY_COLORS,
   ACTIVITY_ICONS,
@@ -31,6 +33,7 @@ import { parseSlugOrId, getTripPath } from '@/lib/slugify';
 import { ExperienceIcon } from '@/components/ExperienceIcon';
 import { ExperienceLevel, EXPERIENCE_LABELS } from '@/lib/constants';
 import { AttendanceModal } from '@/components/AttendanceModal';
+import { TripReportForm } from '@/components/TripReportForm';
 
 function InviteSection({ tripSlug, tripTitle, tripDate }: { tripSlug: string; tripTitle: string; tripDate: string }) {
   const [copied, setCopied] = useState(false);
@@ -147,6 +150,7 @@ export default function TourPostPage() {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [activeTab, setActiveTab] = useState<'team' | 'planning' | 'discussion'>('discussion');
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
 
   const isOwner = user && post && user.id === post.user_id;
   const userResponse = responses.find((r) => r.user_id === user?.id);
@@ -373,6 +377,23 @@ export default function TourPostPage() {
         const contactData = await getTourParticipantsWithContact(postData.id, postData.user_id);
         setParticipantsWithContact(contactData);
       }
+    }
+  };
+
+  const handleSaveTripReport = async (report: TripReport) => {
+    if (!post) return;
+
+    const { error: reportError } = await submitTripReport(post.id, report);
+
+    if (reportError) {
+      setError(reportError.message);
+    } else {
+      setShowReportForm(false);
+      setSuccess('Trip report saved!');
+      // Refresh post data
+      const postData = await getTourPost(post.id);
+      setPost(postData);
+      setTimeout(() => setSuccess(null), 3000);
     }
   };
 
@@ -643,6 +664,94 @@ export default function TourPostPage() {
           </div>
         )}
       </div>
+
+      {/* Trip Report (for completed trips) */}
+      {post.status === 'completed' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Trip Report</h2>
+            {isOwner && (
+              <button
+                onClick={() => setShowReportForm(true)}
+                className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+              >
+                {post.trip_report ? 'Edit Report' : 'Add Report'}
+              </button>
+            )}
+          </div>
+
+          {post.trip_report ? (
+            <div className="space-y-4">
+              {/* Rating */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Overall:</span>
+                <div className="text-xl">
+                  {'⭐'.repeat(post.trip_report.overall_rating)}
+                  {'☆'.repeat(5 - post.trip_report.overall_rating)}
+                </div>
+              </div>
+
+              {/* Conditions */}
+              {post.trip_report.conditions && Object.keys(post.trip_report.conditions).length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Conditions</h3>
+                  <div className="space-y-2">
+                    {Object.entries(post.trip_report.conditions).map(([key, value]) => {
+                      if (!value) return null;
+                      const label = key
+                        .split('_')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ');
+                      const displayValue = typeof value === 'string'
+                        ? value.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+                        : value;
+                      return (
+                        <div key={key} className="flex gap-2 text-sm">
+                          <span className="font-medium text-gray-700">{label}:</span>
+                          <span className="text-gray-600">{displayValue}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Summary */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Summary</h3>
+                <p className="text-gray-700 whitespace-pre-line">{post.trip_report.summary}</p>
+              </div>
+
+              {/* Submitted timestamp */}
+              {post.report_submitted_at && (
+                <div className="text-xs text-gray-500 pt-2 border-t border-gray-200">
+                  Report submitted {new Date(post.report_submitted_at).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 text-sm mb-4">
+                {isOwner
+                  ? 'Share how the trip went by adding a report.'
+                  : 'No trip report has been submitted yet.'}
+              </p>
+              {isOwner && (
+                <button
+                  onClick={() => setShowReportForm(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  Add Trip Report
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Invite section (for owner) */}
       {isOwner && !isPast && post.status !== 'completed' && (
@@ -1122,6 +1231,16 @@ export default function TourPostPage() {
           participants={participants}
           onSave={handleSaveAttendance}
           onCancel={() => setShowAttendanceModal(false)}
+        />
+      )}
+
+      {/* Trip Report Form */}
+      {showReportForm && post && (
+        <TripReportForm
+          activity={post.activity}
+          existingReport={post.trip_report}
+          onSave={handleSaveTripReport}
+          onCancel={() => setShowReportForm(false)}
         />
       )}
     </div>
