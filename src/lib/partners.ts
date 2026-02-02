@@ -85,6 +85,7 @@ export interface TourResponse {
   message: string | null;
   status: 'pending' | 'accepted' | 'declined' | 'withdrawn';
   withdrawal_message: string | null;
+  attended: boolean | null;
   created_at: string;
   // Joined profile data
   profiles?: {
@@ -111,6 +112,7 @@ export interface TourParticipant {
 export interface TourParticipantWithContact extends TourParticipant {
   phone: string | null;
   email: string | null;
+  attended: boolean | null;
 }
 
 // Tour discussion message
@@ -948,10 +950,10 @@ export async function getTourParticipantsWithContact(
   const client = supabase;
 
   const fetchData = async () => {
-    // Get accepted participants
+    // Get accepted participants with attendance data
     const { data: responses, error: responsesError } = await client
       .from('tour_responses')
-      .select('user_id')
+      .select('user_id, attended')
       .eq('tour_id', tourId)
       .eq('status', 'accepted');
 
@@ -959,6 +961,12 @@ export async function getTourParticipantsWithContact(
       console.error('Error fetching tour responses:', responsesError);
       return [];
     }
+
+    // Create a map of user_id to attendance
+    const attendanceMap = new Map<string, boolean | null>();
+    responses?.forEach(r => {
+      attendanceMap.set(r.user_id, r.attended);
+    });
 
     // Get user IDs (participants + organizer)
     const userIds = [tourOwnerId, ...(responses?.map(r => r.user_id) || [])];
@@ -981,6 +989,7 @@ export async function getTourParticipantsWithContact(
       experience_level: p.experience_level,
       phone: p.phone,
       email: p.email,
+      attended: p.id === tourOwnerId ? true : (attendanceMap.get(p.id) ?? null),
     }));
   };
 
@@ -1050,6 +1059,43 @@ export async function updateTourPlanningNotes(
     .from('tour_posts')
     .update({ planning_notes: planningNotes })
     .eq('id', tourId);
+
+  return { error: error as unknown as Error | null };
+}
+
+// Update attendance for multiple participants
+export async function updateAttendance(
+  tourId: string,
+  attendance: Record<string, boolean>
+): Promise<{ error: Error | null }> {
+  if (!supabase) {
+    return { error: new Error('Supabase not configured') };
+  }
+
+  // Get all accepted responses for this tour
+  const { data: responses, error: fetchError } = await supabase
+    .from('tour_responses')
+    .select('id, user_id')
+    .eq('tour_id', tourId)
+    .eq('status', 'accepted');
+
+  if (fetchError) {
+    return { error: fetchError as unknown as Error };
+  }
+
+  if (!responses || responses.length === 0) {
+    return { error: null };
+  }
+
+  // Update each response with attendance data
+  const updates = responses.map(response => ({
+    id: response.id,
+    attended: attendance[response.user_id] ?? null,
+  }));
+
+  const { error } = await supabase
+    .from('tour_responses')
+    .upsert(updates, { onConflict: 'id' });
 
   return { error: error as unknown as Error | null };
 }

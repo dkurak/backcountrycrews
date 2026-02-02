@@ -17,6 +17,7 @@ import {
   updateTourPlanningNotes,
   deleteTourPost,
   withdrawFromTrip,
+  updateAttendance,
   TourPost,
   TourResponse,
   TourParticipant,
@@ -29,6 +30,7 @@ import {
 import { parseSlugOrId, getTripPath } from '@/lib/slugify';
 import { ExperienceIcon } from '@/components/ExperienceIcon';
 import { ExperienceLevel, EXPERIENCE_LABELS } from '@/lib/constants';
+import { AttendanceModal } from '@/components/AttendanceModal';
 
 function InviteSection({ tripSlug, tripTitle, tripDate }: { tripSlug: string; tripTitle: string; tripDate: string }) {
   const [copied, setCopied] = useState(false);
@@ -143,6 +145,8 @@ export default function TourPostPage() {
   const [withdrawMessage, setWithdrawMessage] = useState('');
   const [notifyOthers, setNotifyOthers] = useState(true);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'team' | 'planning' | 'discussion'>('discussion');
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
   const isOwner = user && post && user.id === post.user_id;
   const userResponse = responses.find((r) => r.user_id === user?.id);
@@ -160,6 +164,12 @@ export default function TourPostPage() {
       setPost(postData);
       if (postData) {
         setPlanningNotes(postData.planning_notes || '');
+        // Set default tab based on trip status
+        if (postData.status === 'completed') {
+          setActiveTab('team');
+        } else {
+          setActiveTab('discussion');
+        }
         // Use the full UUID from the loaded post for subsequent queries
         const fullId = postData.id;
         const [responseData, participantData] = await Promise.all([
@@ -335,6 +345,35 @@ export default function TourPostPage() {
     }
 
     setIsWithdrawing(false);
+  };
+
+  const handleSaveAttendance = async (attendance: Record<string, boolean>) => {
+    if (!post) return;
+
+    // Save attendance
+    const { error: attendanceError } = await updateAttendance(post.id, attendance);
+
+    if (attendanceError) {
+      setError(attendanceError.message);
+      return;
+    }
+
+    // Mark trip as completed
+    const { error: statusError } = await updateTourStatus(post.id, 'completed');
+
+    if (statusError) {
+      setError(statusError.message);
+    } else {
+      setShowAttendanceModal(false);
+      setActiveTab('team'); // Switch to team tab to show attendance
+      // Refresh post data and contact info
+      const postData = await getTourPost(post.id);
+      setPost(postData);
+      if (postData && (postData.status === 'confirmed' || postData.status === 'completed')) {
+        const contactData = await getTourParticipantsWithContact(postData.id, postData.user_id);
+        setParticipantsWithContact(contactData);
+      }
+    }
   };
 
   if (loading || authLoading) {
@@ -589,7 +628,7 @@ export default function TourPostPage() {
             )}
             {(post.status === 'open' || post.status === 'confirmed') && (
               <button
-                onClick={() => handleStatusChange('completed')}
+                onClick={() => setShowAttendanceModal(true)}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
               >
                 Mark Completed
@@ -792,155 +831,220 @@ export default function TourPostPage() {
         </div>
       )}
 
-      {/* Contact Info (for confirmed tours - visible to participants) */}
-      {isParticipant && isConfirmed && participantsWithContact.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-blue-900 mb-4">
-            Contact Info
-          </h2>
-          <div className="space-y-3">
-            {participantsWithContact.map((p) => (
-              <div key={p.user_id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Link href={`/profile/${p.user_id}`}>
-                    {p.avatar_url ? (
-                      <img
-                        src={p.avatar_url}
-                        alt={p.display_name || 'Participant'}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-sm font-bold text-blue-700">
-                        {(p.display_name || '?')[0].toUpperCase()}
-                      </span>
-                    )}
-                  </Link>
-                  <div>
-                    <Link href={`/profile/${p.user_id}`} className="font-medium text-blue-900 hover:underline">
-                      {p.display_name || 'Anonymous'}
-                    </Link>
-                    {p.user_id === post.user_id && (
-                      <span className="ml-2 text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded">
-                        Organizer
-                      </span>
-                    )}
+      {/* Tabbed Participant Content (Team, Planning, Discussion) */}
+      {isParticipant && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Tab Headers */}
+          <div className="flex border-b border-gray-200">
+            {/* Team tab - only show when trip is confirmed or completed */}
+            {isConfirmed && (
+              <button
+                onClick={() => setActiveTab('team')}
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'team'
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Team
+              </button>
+            )}
+            {/* Planning tab - always show for participants */}
+            <button
+              onClick={() => setActiveTab('planning')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'planning'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Planning
+            </button>
+            {/* Discussion tab - always show for participants */}
+            <button
+              onClick={() => setActiveTab('discussion')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'discussion'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              Discussion
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Team Tab Content */}
+            {activeTab === 'team' && isConfirmed && (
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Team Info
+                </h2>
+                {participantsWithContact.length > 0 ? (
+                  <div className="space-y-3">
+                    {participantsWithContact.map((p) => (
+                      <div key={p.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Link href={`/profile/${p.user_id}`}>
+                            {p.avatar_url ? (
+                              <img
+                                src={p.avatar_url}
+                                alt={p.display_name || 'Participant'}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-sm font-bold text-gray-700">
+                                {(p.display_name || '?')[0].toUpperCase()}
+                              </span>
+                            )}
+                          </Link>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Link href={`/profile/${p.user_id}`} className="font-medium text-gray-900 hover:underline">
+                                {p.display_name || 'Anonymous'}
+                              </Link>
+                              {p.user_id === post.user_id && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                                  Organizer
+                                </span>
+                              )}
+                              {post.status === 'completed' && p.user_id !== post.user_id && (
+                                <>
+                                  {p.attended === true && (
+                                    <span className="text-green-600 text-sm">✓</span>
+                                  )}
+                                  {p.attended === false && (
+                                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
+                                      No-show
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {p.phone && (
+                                <a href={`tel:${p.phone}`} className="hover:underline">
+                                  {p.phone}
+                                </a>
+                              )}
+                              {p.phone && p.email && <span className="mx-2">•</span>}
+                              {p.email && (
+                                <a href={`mailto:${p.email}`} className="hover:underline">
+                                  {p.email}
+                                </a>
+                              )}
+                              {!p.phone && !p.email && (
+                                <span className="text-gray-500 italic">No contact info</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div className="text-sm text-blue-800">
-                  {p.phone && (
-                    <a href={`tel:${p.phone}`} className="hover:underline">
-                      {p.phone}
-                    </a>
-                  )}
-                  {p.phone && p.email && <span className="mx-2">•</span>}
-                  {p.email && (
-                    <a href={`mailto:${p.email}`} className="hover:underline">
-                      {p.email}
-                    </a>
-                  )}
-                  {!p.phone && !p.email && (
-                    <span className="text-blue-600 italic">No contact info</span>
-                  )}
+                ) : (
+                  <p className="text-gray-500 italic">Loading team information...</p>
+                )}
+              </div>
+            )}
+
+            {/* Planning Tab Content */}
+            {activeTab === 'planning' && (
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Planning Notes
+                </h2>
+                {isOwner ? (
+                  <div className="space-y-3">
+                    <textarea
+                      value={planningNotes}
+                      onChange={(e) => setPlanningNotes(e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+                      placeholder="Add route plans, meeting details, Plan A/B, etc."
+                    />
+                    <button
+                      onClick={handleSavePlanningNotes}
+                      disabled={isSavingNotes}
+                      className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                    >
+                      {isSavingNotes ? 'Saving...' : 'Save Notes'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-gray-700 whitespace-pre-line">
+                    {planningNotes || <span className="text-gray-400 italic">No planning notes yet.</span>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Discussion Tab Content */}
+            {activeTab === 'discussion' && (
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Discussion
+                </h2>
+
+                {/* Messages */}
+                {messages.length > 0 ? (
+                  <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                    {messages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`p-3 rounded-lg ${
+                          msg.user_id === user?.id
+                            ? 'bg-blue-50 ml-8'
+                            : 'bg-gray-50 mr-8'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm text-gray-900">
+                            {msg.profiles?.display_name || 'Anonymous'}
+                          </span>
+                          {msg.user_id === post.user_id && (
+                            <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                              Organizer
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400">
+                            {new Date(msg.created_at).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700">{msg.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic mb-6">No messages yet. Start the conversation!</p>
+                )}
+
+                {/* New message input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    placeholder="Type a message..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={isSendingMessage || !newMessage.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSendingMessage ? '...' : 'Send'}
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Planning Notes (editable by owner, visible to participants) */}
-      {isParticipant && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Planning Notes
-          </h2>
-          {isOwner ? (
-            <div className="space-y-3">
-              <textarea
-                value={planningNotes}
-                onChange={(e) => setPlanningNotes(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-                placeholder="Add route plans, meeting details, Plan A/B, etc."
-              />
-              <button
-                onClick={handleSavePlanningNotes}
-                disabled={isSavingNotes}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 transition-colors"
-              >
-                {isSavingNotes ? 'Saving...' : 'Save Notes'}
-              </button>
-            </div>
-          ) : (
-            <div className="text-gray-700 whitespace-pre-line">
-              {planningNotes || <span className="text-gray-400 italic">No planning notes yet.</span>}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Discussion Thread (for participants) */}
-      {isParticipant && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Discussion
-          </h2>
-
-          {/* Messages */}
-          {messages.length > 0 ? (
-            <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`p-3 rounded-lg ${
-                    msg.user_id === user?.id
-                      ? 'bg-blue-50 ml-8'
-                      : 'bg-gray-50 mr-8'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm text-gray-900">
-                      {msg.profiles?.display_name || 'Anonymous'}
-                    </span>
-                    {msg.user_id === post.user_id && (
-                      <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
-                        Organizer
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-400">
-                      {new Date(msg.created_at).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-700">{msg.content}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-400 italic mb-6">No messages yet. Start the conversation!</p>
-          )}
-
-          {/* New message input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              placeholder="Type a message..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={isSendingMessage || !newMessage.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSendingMessage ? '...' : 'Send'}
-            </button>
+            )}
           </div>
         </div>
       )}
@@ -1010,6 +1114,15 @@ export default function TourPostPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Attendance Modal */}
+      {showAttendanceModal && post && (
+        <AttendanceModal
+          participants={participants}
+          onSave={handleSaveAttendance}
+          onCancel={() => setShowAttendanceModal(false)}
+        />
       )}
     </div>
   );
