@@ -62,10 +62,10 @@ export default function NewTourPostPage() {
     }
   }, [authLoading, user, router]);
 
-  // Set default date to tomorrow
+  // Set default date to today
   useEffect(() => {
-    const tomorrow = new Date(Date.now() + 86400000);
-    setTourDate(tomorrow.toISOString().split('T')[0]);
+    const today = new Date();
+    setTourDate(today.toISOString().split('T')[0]);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,10 +231,12 @@ export default function NewTourPostPage() {
                 type="date"
                 value={tourDate}
                 onChange={(e) => setTourDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Past dates allowed for historical records
+              </p>
             </div>
 
             <div>

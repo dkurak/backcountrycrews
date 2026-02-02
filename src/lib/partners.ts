@@ -530,13 +530,19 @@ export async function createTourPost(
     return { data: null, error: new Error('Supabase not configured') };
   }
 
+  // Determine initial status based on date
+  // Past dates = completed (for historical records)
+  // Future/today = open
+  const today = new Date().toISOString().split('T')[0];
+  const initialStatus = post.tour_date < today ? 'completed' : 'open';
+
   // First insert without slug to get the ID
   const { data, error } = await supabase
     .from('tour_posts')
     .insert({
       ...post,
       user_id: userId,
-      status: 'open',
+      status: initialStatus,
     })
     .select()
     .single();
