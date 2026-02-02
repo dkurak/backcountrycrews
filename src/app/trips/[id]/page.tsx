@@ -621,7 +621,7 @@ export default function TourPostPage() {
             {(post.status === 'open' || post.status === 'full') && (
               <button
                 onClick={() => handleStatusChange('confirmed')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
               >
                 Confirm Trip - It&apos;s On!
               </button>
@@ -629,14 +629,14 @@ export default function TourPostPage() {
             {(post.status === 'open' || post.status === 'full' || post.status === 'confirmed') && (
               <button
                 onClick={() => setShowAttendanceModal(true)}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors cursor-pointer"
               >
                 Mark Completed
               </button>
             )}
             <button
               onClick={handleDelete}
-              className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors cursor-pointer"
             >
               Delete Trip
             </button>
@@ -665,7 +665,7 @@ export default function TourPostPage() {
             {!isPast && (
               <button
                 onClick={() => setShowWithdrawModal(true)}
-                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex-shrink-0 cursor-pointer"
               >
                 Leave Trip
               </button>
@@ -687,7 +687,7 @@ export default function TourPostPage() {
             {!isPast && (
               <button
                 onClick={() => setShowWithdrawModal(true)}
-                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors flex-shrink-0 cursor-pointer"
               >
                 Withdraw Interest
               </button>
@@ -840,7 +840,7 @@ export default function TourPostPage() {
             {isConfirmed && (
               <button
                 onClick={() => setActiveTab('team')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
                   activeTab === 'team'
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -852,7 +852,7 @@ export default function TourPostPage() {
             {/* Planning tab - always show for participants */}
             <button
               onClick={() => setActiveTab('planning')}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === 'planning'
                   ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -863,7 +863,7 @@ export default function TourPostPage() {
             {/* Discussion tab - always show for participants */}
             <button
               onClick={() => setActiveTab('discussion')}
-              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === 'discussion'
                   ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
