@@ -519,71 +519,82 @@ export default function TourPostPage() {
         </div>
 
         {/* Who's Going (visible to logged-in users) */}
-        {user && (
-          <div className="py-4 border-t border-gray-200">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
-              Who&apos;s Going ({participants.length + 1})
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {/* Organizer */}
-              <Link
-                href={`/profile/${post.user_id}`}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-full hover:bg-purple-100 transition-colors"
-              >
-                {post.profiles?.avatar_url ? (
-                  <img
-                    src={post.profiles.avatar_url}
-                    alt={post.profiles.display_name || 'Organizer'}
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center text-xs font-bold text-purple-700">
-                    {(post.profiles?.display_name || '?')[0].toUpperCase()}
-                  </span>
-                )}
-                <span className="text-sm font-medium text-purple-800">
-                  {post.profiles?.display_name || 'Anonymous'}
-                </span>
-                {post.profiles?.experience_level && (
-                  <span className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded">
-                    <ExperienceIcon level={post.profiles.experience_level as ExperienceLevel} size="sm" />
-                  </span>
-                )}
-                <span className="text-xs bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded">
-                  Organizer
-                </span>
-              </Link>
-              {/* Accepted participants */}
-              {participants.map((participant) => (
+        {user && (() => {
+          // For completed trips, only show attendees (filter out no-shows)
+          const displayParticipants = post.status === 'completed' && participantsWithContact.length > 0
+            ? participantsWithContact.filter(p => p.user_id !== post.user_id && p.attended === true)
+            : participants;
+
+          const attendeeCount = post.status === 'completed' && participantsWithContact.length > 0
+            ? 1 + displayParticipants.length // Organizer + attendees
+            : participants.length + 1; // All accepted participants + organizer
+
+          return (
+            <div className="py-4 border-t border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                Who&apos;s Going ({attendeeCount})
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {/* Organizer */}
                 <Link
-                  key={participant.user_id}
-                  href={`/profile/${participant.user_id}`}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full hover:bg-green-100 transition-colors"
+                  href={`/profile/${post.user_id}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-full hover:bg-purple-100 transition-colors"
                 >
-                  {participant.avatar_url ? (
+                  {post.profiles?.avatar_url ? (
                     <img
-                      src={participant.avatar_url}
-                      alt={participant.display_name || 'Participant'}
+                      src={post.profiles.avatar_url}
+                      alt={post.profiles.display_name || 'Organizer'}
                       className="w-6 h-6 rounded-full object-cover"
                     />
                   ) : (
-                    <span className="w-6 h-6 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold text-green-700">
-                      {(participant.display_name || '?')[0].toUpperCase()}
+                    <span className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center text-xs font-bold text-purple-700">
+                      {(post.profiles?.display_name || '?')[0].toUpperCase()}
                     </span>
                   )}
-                  <span className="text-sm font-medium text-green-800">
-                    {participant.display_name || 'Anonymous'}
+                  <span className="text-sm font-medium text-purple-800">
+                    {post.profiles?.display_name || 'Anonymous'}
                   </span>
-                  {participant.experience_level && (
-                    <span className="flex items-center justify-center w-5 h-5 bg-green-100 rounded">
-                      <ExperienceIcon level={participant.experience_level as ExperienceLevel} size="sm" />
+                  {post.profiles?.experience_level && (
+                    <span className="flex items-center justify-center w-5 h-5 bg-purple-100 rounded">
+                      <ExperienceIcon level={post.profiles.experience_level as ExperienceLevel} size="sm" />
                     </span>
                   )}
+                  <span className="text-xs bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded">
+                    Organizer
+                  </span>
                 </Link>
-              ))}
+                {/* Accepted participants (or attendees for completed trips) */}
+                {displayParticipants.map((participant) => (
+                  <Link
+                    key={participant.user_id}
+                    href={`/profile/${participant.user_id}`}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full hover:bg-green-100 transition-colors"
+                  >
+                    {participant.avatar_url ? (
+                      <img
+                        src={participant.avatar_url}
+                        alt={participant.display_name || 'Participant'}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="w-6 h-6 rounded-full bg-green-200 flex items-center justify-center text-xs font-bold text-green-700">
+                        {(participant.display_name || '?')[0].toUpperCase()}
+                      </span>
+                    )}
+                    <span className="text-sm font-medium text-green-800">
+                      {participant.display_name || 'Anonymous'}
+                    </span>
+                    {participant.experience_level && (
+                      <span className="flex items-center justify-center w-5 h-5 bg-green-100 rounded">
+                        <ExperienceIcon level={participant.experience_level as ExperienceLevel} size="sm" />
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Description */}
         {post.description && (
