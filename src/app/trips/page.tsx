@@ -166,6 +166,30 @@ function TourPostCard({ post, pendingCount, currentUserId, joinedTripIds }: { po
   const activity = post.activity || 'ski_tour';
   const isOrganizer = currentUserId && post.user_id === currentUserId;
   const hasJoined = joinedTripIds?.has(post.id);
+  const isCompleted = post.status === 'completed';
+
+  // Get a key condition to display for completed trips
+  const getKeyCondition = () => {
+    if (!post.trip_report?.conditions) return null;
+    const conditions = post.trip_report.conditions as Record<string, string>;
+
+    // Show most relevant condition based on activity
+    if (activity === 'ski_tour' && conditions.snow_quality) {
+      return `Snow: ${conditions.snow_quality.charAt(0).toUpperCase() + conditions.snow_quality.slice(1)}`;
+    }
+    if (activity === 'ski_tour' && conditions.descent_quality) {
+      return `Descent: ${conditions.descent_quality.charAt(0).toUpperCase() + conditions.descent_quality.slice(1)}`;
+    }
+    if ((activity === 'offroad' || activity === 'mountain_bike' || activity === 'hike' || activity === 'trail_run') && conditions.trail_condition) {
+      return `Trail: ${conditions.trail_condition.charAt(0).toUpperCase() + conditions.trail_condition.slice(1)}`;
+    }
+    if (activity === 'climb' && conditions.rock_quality) {
+      return `Rock: ${conditions.rock_quality.charAt(0).toUpperCase() + conditions.rock_quality.slice(1)}`;
+    }
+    return null;
+  };
+
+  const keyCondition = getKeyCondition();
 
   return (
     <Link
@@ -193,6 +217,12 @@ function TourPostCard({ post, pendingCount, currentUserId, joinedTripIds }: { po
             {pendingCount && pendingCount > 0 && (
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                 {pendingCount} pending
+              </span>
+            )}
+            {/* Show star rating for completed trips with reports */}
+            {isCompleted && post.trip_report?.overall_rating && (
+              <span className="text-sm">
+                {'⭐'.repeat(post.trip_report.overall_rating)}
               </span>
             )}
           </div>
@@ -252,13 +282,27 @@ function TourPostCard({ post, pendingCount, currentUserId, joinedTripIds }: { po
           </span>
         )}
 
-        {post.status === 'full' ? (
+        {/* Show attendance for completed trips, spots for active trips */}
+        {isCompleted ? (
+          post.attendance_count !== undefined ? (
+            <span className="text-gray-500">
+              {post.attendance_count === 1 ? 'Solo' : `${post.attendance_count} attended`}
+            </span>
+          ) : null
+        ) : post.status === 'full' ? (
           <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
             Full
           </span>
         ) : (
           <span className="text-gray-500">
             {post.accepted_count || 0}/{post.spots_available + (post.accepted_count || 0)} spots filled
+          </span>
+        )}
+
+        {/* Show key condition for completed trips with reports */}
+        {isCompleted && keyCondition && (
+          <span className="text-gray-500 text-xs">
+            {keyCondition}
           </span>
         )}
       </div>

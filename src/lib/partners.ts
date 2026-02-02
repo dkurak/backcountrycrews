@@ -121,6 +121,8 @@ export interface TourPost {
   accepted_count?: number;
   // Computed: count of pending responses (for organizers)
   pending_count?: number;
+  // Computed: count of attendees for completed trips (includes organizer)
+  attendance_count?: number;
 }
 
 export interface TourResponse {
@@ -266,20 +268,30 @@ export async function getTourPosts(filters: TourFilters = {}): Promise<TourPost[
       const tourIds = tours.map(t => t.id);
       const { data: responses } = await client
         .from('tour_responses')
-        .select('tour_id')
+        .select('tour_id, attended')
         .in('tour_id', tourIds)
         .eq('status', 'accepted');
 
       if (responses) {
         // Count accepted responses per tour
-        const countMap: Record<string, number> = {};
+        const acceptedCountMap: Record<string, number> = {};
+        const attendedCountMap: Record<string, number> = {};
+
         responses.forEach(r => {
-          countMap[r.tour_id] = (countMap[r.tour_id] || 0) + 1;
+          acceptedCountMap[r.tour_id] = (acceptedCountMap[r.tour_id] || 0) + 1;
+          // Count attendance (only for completed trips where attended is marked)
+          if (r.attended === true) {
+            attendedCountMap[r.tour_id] = (attendedCountMap[r.tour_id] || 0) + 1;
+          }
         });
 
         // Add counts to tours
         tours.forEach(tour => {
-          tour.accepted_count = countMap[tour.id] || 0;
+          tour.accepted_count = acceptedCountMap[tour.id] || 0;
+          // For completed trips, add attendance count (attendees + organizer)
+          if (tour.status === 'completed') {
+            tour.attendance_count = (attendedCountMap[tour.id] || 0) + 1; // +1 for organizer
+          }
         });
       }
     }
