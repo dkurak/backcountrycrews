@@ -761,8 +761,8 @@ export default function TourPostPage() {
         </div>
       )}
 
-      {/* Responses (for owner) */}
-      {isOwner && responses.length > 0 && (
+      {/* Responses (for owner) - hide for completed trips since Team tab shows this */}
+      {isOwner && responses.length > 0 && post.status !== 'completed' && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Interested People ({responses.length})
