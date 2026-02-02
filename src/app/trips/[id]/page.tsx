@@ -618,7 +618,7 @@ export default function TourPostPage() {
             >
               Edit Trip
             </Link>
-            {post.status === 'open' && (
+            {(post.status === 'open' || post.status === 'full') && (
               <button
                 onClick={() => handleStatusChange('confirmed')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -626,7 +626,7 @@ export default function TourPostPage() {
                 Confirm Trip - It&apos;s On!
               </button>
             )}
-            {(post.status === 'open' || post.status === 'confirmed') && (
+            {(post.status === 'open' || post.status === 'full' || post.status === 'confirmed') && (
               <button
                 onClick={() => setShowAttendanceModal(true)}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
