@@ -79,6 +79,19 @@ export default function ProfilePage() {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [trailheads, setTrailheads] = useState<Trailhead[]>([]);
 
+  // Ski Touring Preferences (Phase 2.5)
+  const [hasSnowmobile, setHasSnowmobile] = useState(false);
+  const [hasSplitboard, setHasSplitboard] = useState(false);
+  const [touringApproach, setTouringApproach] = useState<'kiss' | 'balanced' | 'aggressive'>('balanced');
+  const [accessPreference, setAccessPreference] = useState<'earn_your_turns' | 'sled_assisted' | 'both'>('earn_your_turns');
+  const [riskTolerance, setRiskTolerance] = useState<'conservative' | 'moderate' | 'aggressive'>('moderate');
+  const [groupSizePreference, setGroupSizePreference] = useState<'solo' | 'small' | 'large'>('small');
+  const [favoriteRoutes, setFavoriteRoutes] = useState<string[]>([]);
+  const [avoidRoutes, setAvoidRoutes] = useState<{ route: string; reason: string }[]>([]);
+  const [newFavoriteRoute, setNewFavoriteRoute] = useState('');
+  const [newAvoidRoute, setNewAvoidRoute] = useState('');
+  const [newAvoidReason, setNewAvoidReason] = useState('');
+
   // Fetch trailheads from database
   useEffect(() => {
     getTrailheads().then(setTrailheads);
@@ -108,6 +121,19 @@ export default function ProfilePage() {
       setShowOnTours(profile.show_on_tours !== false);
       setBio(profile.bio || '');
       setEmergencyContacts(profile.emergency_contacts || []);
+
+      // Load ski touring preferences from profile_data
+      if (profile.profile_data?.ski_touring) {
+        const skiData = profile.profile_data.ski_touring;
+        setHasSnowmobile(skiData.equipment?.has_snowmobile || false);
+        setHasSplitboard(skiData.equipment?.has_splitboard || false);
+        setTouringApproach(skiData.style?.approach || 'balanced');
+        setAccessPreference(skiData.style?.access_preference || 'earn_your_turns');
+        setRiskTolerance(skiData.style?.risk_tolerance || 'moderate');
+        setGroupSizePreference(skiData.style?.group_size || 'small');
+        setFavoriteRoutes(skiData.favorite_routes || []);
+        setAvoidRoutes(skiData.avoid_routes || []);
+      }
     }
   }, [profile]);
 
@@ -162,6 +188,22 @@ export default function ProfilePage() {
       show_on_tours: showOnTours,
       bio: bio || null,
       emergency_contacts: emergencyContacts.filter(c => c.name.trim() || c.phone.trim()),
+      profile_data: {
+        ski_touring: {
+          equipment: {
+            has_snowmobile: hasSnowmobile,
+            has_splitboard: hasSplitboard,
+          },
+          style: {
+            approach: touringApproach,
+            access_preference: accessPreference,
+            risk_tolerance: riskTolerance,
+            group_size: groupSizePreference,
+          },
+          favorite_routes: favoriteRoutes,
+          avoid_routes: avoidRoutes,
+        },
+      },
     });
 
     setIsSaving(false);
@@ -497,6 +539,184 @@ export default function ProfilePage() {
               />
               <span className="text-gray-700">First Aid Kit</span>
             </label>
+          </div>
+        </div>
+
+        {/* Ski Touring Preferences */}
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ski Touring Preferences</h2>
+
+          {/* Equipment */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Equipment</h3>
+          <div className="flex flex-wrap gap-4 mb-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasSnowmobile}
+                onChange={(e) => setHasSnowmobile(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">Snowmobile</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasSplitboard}
+                onChange={(e) => setHasSplitboard(e.target.checked)}
+                className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">Splitboard</span>
+            </label>
+          </div>
+
+          {/* Touring Style */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Touring Style</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Approach</label>
+              <select
+                value={touringApproach}
+                onChange={(e) => setTouringApproach(e.target.value as 'kiss' | 'balanced' | 'aggressive')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="kiss">KISS (Keep It Simple)</option>
+                <option value="balanced">Balanced</option>
+                <option value="aggressive">Aggressive</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Access Preference</label>
+              <select
+                value={accessPreference}
+                onChange={(e) => setAccessPreference(e.target.value as 'earn_your_turns' | 'sled_assisted' | 'both')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="earn_your_turns">Earn Your Turns</option>
+                <option value="sled_assisted">Sled Assisted</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Risk Tolerance</label>
+              <select
+                value={riskTolerance}
+                onChange={(e) => setRiskTolerance(e.target.value as 'conservative' | 'moderate' | 'aggressive')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="conservative">Conservative</option>
+                <option value="moderate">Moderate</option>
+                <option value="aggressive">Aggressive</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Group Size Preference</label>
+              <select
+                value={groupSizePreference}
+                onChange={(e) => setGroupSizePreference(e.target.value as 'solo' | 'small' | 'large')}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="solo">Solo</option>
+                <option value="small">Small Group (2-4)</option>
+                <option value="large">Large Group (5+)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Favorite Routes */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Favorite Routes</h3>
+          <div className="mb-4">
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newFavoriteRoute}
+                onChange={(e) => setNewFavoriteRoute(e.target.value)}
+                placeholder="Add a favorite route..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newFavoriteRoute.trim()) {
+                    setFavoriteRoutes([...favoriteRoutes, newFavoriteRoute.trim()]);
+                    setNewFavoriteRoute('');
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+              >
+                Add
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {favoriteRoutes.map((route, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+                >
+                  {route}
+                  <button
+                    type="button"
+                    onClick={() => setFavoriteRoutes(favoriteRoutes.filter((_, i) => i !== index))}
+                    className="text-green-600 hover:text-green-900 cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Routes to Avoid */}
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Routes to Avoid</h3>
+          <div className="mb-4">
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newAvoidRoute}
+                onChange={(e) => setNewAvoidRoute(e.target.value)}
+                placeholder="Route name..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="text"
+                value={newAvoidReason}
+                onChange={(e) => setNewAvoidReason(e.target.value)}
+                placeholder="Reason..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newAvoidRoute.trim() && newAvoidReason.trim()) {
+                    setAvoidRoutes([...avoidRoutes, { route: newAvoidRoute.trim(), reason: newAvoidReason.trim() }]);
+                    setNewAvoidRoute('');
+                    setNewAvoidReason('');
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+              >
+                Add
+              </button>
+            </div>
+            <div className="space-y-2">
+              {avoidRoutes.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between px-3 py-2 bg-red-50 border border-red-200 rounded-md"
+                >
+                  <div>
+                    <span className="font-medium text-red-900">{item.route}</span>
+                    <span className="text-sm text-red-700 ml-2">— {item.reason}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAvoidRoutes(avoidRoutes.filter((_, i) => i !== index))}
+                    className="text-red-600 hover:text-red-900 cursor-pointer"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

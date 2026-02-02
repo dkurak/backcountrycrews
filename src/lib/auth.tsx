@@ -10,6 +10,27 @@ interface EmergencyContact {
   relationship: string;
 }
 
+// Activity-specific profile data
+interface SkiTouringProfile {
+  equipment?: {
+    has_snowmobile?: boolean;
+    has_splitboard?: boolean;
+  };
+  style?: {
+    approach?: 'kiss' | 'balanced' | 'aggressive';
+    access_preference?: 'earn_your_turns' | 'sled_assisted' | 'both';
+    risk_tolerance?: 'conservative' | 'moderate' | 'aggressive';
+    group_size?: 'solo' | 'small' | 'large';
+  };
+  favorite_routes?: string[];
+  avoid_routes?: Array<{ route: string; reason: string }>;
+}
+
+interface ProfileData {
+  ski_touring?: SkiTouringProfile;
+  // Future: offroad, mountain_bike, etc.
+}
+
 interface Profile {
   id: string;
   email: string | null;
@@ -43,6 +64,7 @@ interface Profile {
   is_admin: boolean;
   created_at: string;
   updated_at: string;
+  profile_data: ProfileData | null;
 }
 
 interface AuthContextType {
