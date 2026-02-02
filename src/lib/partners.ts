@@ -1087,17 +1087,21 @@ export async function updateAttendance(
     return { error: null };
   }
 
-  // Update each response with attendance data
-  const updates = responses.map(response => ({
-    id: response.id,
-    attended: attendance[response.user_id] ?? null,
-  }));
+  // Update each response individually to work with RLS
+  for (const response of responses) {
+    const { error } = await supabase
+      .from('tour_responses')
+      .update({ attended: attendance[response.user_id] ?? null })
+      .eq('id', response.id)
+      .eq('tour_id', tourId); // Include tour_id for RLS policy check
 
-  const { error } = await supabase
-    .from('tour_responses')
-    .upsert(updates, { onConflict: 'id' });
+    if (error) {
+      console.error('Error updating attendance for response:', response.id, error);
+      return { error: error as unknown as Error };
+    }
+  }
 
-  return { error: error as unknown as Error | null };
+  return { error: null };
 }
 
 // ===== Notification Functions =====
