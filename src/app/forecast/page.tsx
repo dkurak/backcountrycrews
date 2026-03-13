@@ -683,11 +683,10 @@ function ForecastContent() {
   const zoneParam = searchParams.get('zone');
   const tabParam = searchParams.get('tab');
   const initialZone = (zoneParam === 'northwest' || zoneParam === 'southeast') ? zoneParam : 'southeast';
-  const initialTab = (tabParam === 'weather' || tabParam === 'analysis') ? tabParam : 'conditions';
+  const initialTab = (tabParam === 'weather' || tabParam === 'analysis7' || tabParam === 'analysis14') ? tabParam : 'conditions';
 
   const [selectedZone, setSelectedZone] = useState<'northwest' | 'southeast'>(initialZone);
-  const [activeTab, setActiveTab] = useState<'conditions' | 'weather' | 'analysis'>(initialTab as 'conditions' | 'weather' | 'analysis');
-  const [days, setDays] = useState<7 | 14>(7);
+  const [activeTab, setActiveTab] = useState<'conditions' | 'weather' | 'analysis7' | 'analysis14'>(initialTab as 'conditions' | 'weather' | 'analysis7' | 'analysis14');
 
   const handleZoneChange = (zone: 'northwest' | 'southeast') => {
     setSelectedZone(zone);
@@ -697,7 +696,7 @@ function ForecastContent() {
     router.push(`/forecast?${params.toString()}`, { scroll: false });
   };
 
-  const handleTabChange = (tab: 'conditions' | 'weather' | 'analysis') => {
+  const handleTabChange = (tab: 'conditions' | 'weather' | 'analysis7' | 'analysis14') => {
     setActiveTab(tab);
     const params = new URLSearchParams();
     params.set('zone', selectedZone);
@@ -737,65 +736,32 @@ function ForecastContent() {
         </Link>
       </div>
 
-      {/* Tab selector + day toggle */}
-      <div className="flex items-center border-b border-gray-200">
-        <button
-          onClick={() => handleTabChange('conditions')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            activeTab === 'conditions'
-              ? 'border-gray-900 text-gray-900'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Conditions
-        </button>
-        <button
-          onClick={() => handleTabChange('analysis')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            activeTab === 'analysis'
-              ? 'border-gray-900 text-gray-900'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          {days}-Day
-        </button>
-        <button
-          onClick={() => handleTabChange('weather')}
-          className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-            activeTab === 'weather'
-              ? 'border-gray-900 text-gray-900'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Weather
-        </button>
-        <div className="ml-auto flex items-center gap-1 pb-1">
+      {/* Tab selector */}
+      <div className="flex border-b border-gray-200">
+        {(['conditions', 'analysis7', 'analysis14', 'weather'] as const).map((tab) => (
           <button
-            onClick={() => setDays(7)}
-            className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-              days === 7 ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            key={tab}
+            onClick={() => handleTabChange(tab)}
+            className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
+              activeTab === tab
+                ? 'border-gray-900 text-gray-900'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            7d
+            {tab === 'conditions' ? 'Conditions' : tab === 'analysis7' ? '7-Day' : tab === 'analysis14' ? '14-Day' : 'Weather'}
           </button>
-          <button
-            onClick={() => setDays(14)}
-            className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-              days === 14 ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            14d
-          </button>
-        </div>
+        ))}
       </div>
 
       {/* Tab content */}
       {activeTab === 'conditions' ? (
-        <ConditionsTab selectedZone={selectedZone} days={days} />
-      ) : activeTab === 'analysis' ? (
-        <AnalysisTab selectedZone={selectedZone} days={days} />
+        <ConditionsTab selectedZone={selectedZone} days={7} />
+      ) : activeTab === 'analysis7' ? (
+        <AnalysisTab selectedZone={selectedZone} days={7} />
+      ) : activeTab === 'analysis14' ? (
+        <AnalysisTab selectedZone={selectedZone} days={14} />
       ) : (
-        <WeatherTab selectedZone={selectedZone} days={days} />
+        <WeatherTab selectedZone={selectedZone} days={7} />
       )}
     </div>
   );
