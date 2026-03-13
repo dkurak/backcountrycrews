@@ -7,6 +7,7 @@ import { useTheme } from '@/lib/theme';
 import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
 import { getTripsAwaitingResponse, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, UserNotification, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 import { getTripPath } from '@/lib/slugify';
+import { SECTION_FLAGS } from '@/lib/featureFlags';
 
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -195,46 +196,50 @@ export default function HomePage() {
         </Link>
 
         {/* Post a Trip CTA - Primary action */}
-        <Link
-          href={user ? "/trips/new" : "/login"}
-          className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-          style={{
-            background: `linear-gradient(to right, ${colors.secondary.from}, ${colors.secondary.to})`,
-            color: colors.secondary.text,
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="text-4xl">⛷️</div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">Post a Trip</h2>
-              <p style={{ color: colors.secondary.subtext }}>Plan your adventure and invite your crew</p>
+        {SECTION_FLAGS.trips && (
+          <Link
+            href={user ? "/trips/new" : "/login"}
+            className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
+            style={{
+              background: `linear-gradient(to right, ${colors.secondary.from}, ${colors.secondary.to})`,
+              color: colors.secondary.text,
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">⛷️</div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold">Post a Trip</h2>
+                <p style={{ color: colors.secondary.subtext }}>Plan your adventure and invite your crew</p>
+              </div>
+              <div className="text-2xl">→</div>
             </div>
-            <div className="text-2xl">→</div>
-          </div>
-        </Link>
+          </Link>
+        )}
 
         {/* Browse Trips CTA */}
-        <Link
-          href="/trips"
-          className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-          style={{
-            background: `linear-gradient(to right, ${colors.tertiary.from}, ${colors.tertiary.to})`,
-            color: colors.tertiary.text,
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="text-4xl">🗓️</div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">Browse Trips</h2>
-              <p style={{ color: colors.tertiary.subtext }}>Find upcoming adventures near you</p>
+        {SECTION_FLAGS.trips && (
+          <Link
+            href="/trips"
+            className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
+            style={{
+              background: `linear-gradient(to right, ${colors.tertiary.from}, ${colors.tertiary.to})`,
+              color: colors.tertiary.text,
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">🗓️</div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold">Browse Trips</h2>
+                <p style={{ color: colors.tertiary.subtext }}>Find upcoming adventures near you</p>
+              </div>
+              <div className="text-2xl">→</div>
             </div>
-            <div className="text-2xl">→</div>
-          </div>
-        </Link>
+          </Link>
+        )}
       </div>
 
       {/* Notifications section for logged-in users */}
-      {user && hasNotifications && (
+      {user && hasNotifications && SECTION_FLAGS.trips && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>

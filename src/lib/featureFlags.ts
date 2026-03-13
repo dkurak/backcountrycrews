@@ -1,6 +1,22 @@
 import { supabase } from './supabase';
 import { ActivityType } from './partners';
 
+// ─── Section-level feature flags ────────────────────────────────────────────
+// Edit these values to show/hide entire sections of the app.
+// forecast  – /forecast page + forecast chat widget
+// trips     – /trips, Post a Trip, Browse Trips, trip notifications
+// partners  – /partners page
+// fieldGuide – /field-guide page
+export const SECTION_FLAGS = {
+  forecast: true,
+  trips: false,
+  partners: false,
+  fieldGuide: true,
+} as const;
+
+export type SectionKey = keyof typeof SECTION_FLAGS;
+// ────────────────────────────────────────────────────────────────────────────
+
 export interface FeatureFlag {
   key: string;
   enabled: boolean;

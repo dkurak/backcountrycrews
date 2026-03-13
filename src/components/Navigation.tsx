@@ -7,13 +7,16 @@ import { useAuth } from '@/lib/auth';
 import { getUnreadNotificationCount } from '@/lib/partners';
 import { Logo } from './Logo';
 import { Avatar } from './Avatar';
+import { SECTION_FLAGS } from '@/lib/featureFlags';
 
-const navItems = [
-  { href: '/forecast', label: 'Forecast' },
-  { href: '/trips', label: 'Trips' },
-  { href: '/partners', label: 'Partners' },
-  { href: '/field-guide', label: 'Field Guide' },
+const ALL_NAV_ITEMS = [
+  { href: '/forecast', label: 'Forecast', section: 'forecast' as const },
+  { href: '/trips', label: 'Trips', section: 'trips' as const },
+  { href: '/partners', label: 'Partners', section: 'partners' as const },
+  { href: '/field-guide', label: 'Field Guide', section: 'fieldGuide' as const },
 ];
+
+const navItems = ALL_NAV_ITEMS.filter(item => SECTION_FLAGS[item.section]);
 
 export function Navigation() {
   const pathname = usePathname();

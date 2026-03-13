@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { clearFeatureFlagCache } from '@/lib/featureFlags';
+import { clearFeatureFlagCache, SECTION_FLAGS } from '@/lib/featureFlags';
 import { useTheme, themes, ThemeName } from '@/lib/theme';
 import { EXPERIENCE_LABELS } from '@/lib/constants';
 
@@ -797,6 +797,50 @@ export default function AdminPage() {
               <p className="text-gray-500">No feature flags found. Run the migration first.</p>
             ) : (
               <div className="space-y-6">
+                {/* Section Flags */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-gray-700">Sections</h3>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                      Edit <code className="font-mono">featureFlags.ts</code> → SECTION_FLAGS
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {(Object.entries(SECTION_FLAGS) as [keyof typeof SECTION_FLAGS, boolean][]).map(([key, enabled]) => {
+                      const labels: Record<keyof typeof SECTION_FLAGS, { label: string; icon: string }> = {
+                        forecast: { label: 'Forecast', icon: '🏔️' },
+                        trips: { label: 'Trips', icon: '⛷️' },
+                        partners: { label: 'Partners', icon: '👥' },
+                        fieldGuide: { label: 'Field Guide', icon: '📖' },
+                      };
+                      const { label, icon } = labels[key];
+                      return (
+                        <div
+                          key={key}
+                          className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                            enabled ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{icon}</span>
+                            <div className="text-left">
+                              <div className="font-medium text-gray-900 text-sm">{label}</div>
+                              <div className={`text-xs font-medium ${enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                                {enabled ? 'ON' : 'OFF'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className={`w-10 h-6 rounded-full ${enabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                            <div className={`w-5 h-5 rounded-full bg-white shadow transform mt-0.5 ${
+                              enabled ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'
+                            }`} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Activity Flags */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Activities</h3>
