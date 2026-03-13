@@ -8,14 +8,10 @@ const DANGER_LABELS: Record<number, string> = {
   1: 'Low', 2: 'Moderate', 3: 'Considerable', 4: 'High', 5: 'Extreme',
 };
 
-type SupabaseClient = ReturnType<typeof createClient>;
 type AnyRecord = Record<string, unknown>;
 
-async function executeTool(
-  name: string,
-  input: Record<string, unknown>,
-  supabase: SupabaseClient
-): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function executeTool(name: string, input: AnyRecord, supabase: any): Promise<string> {
   const zones = input.zone === 'both' ? ['northwest', 'southeast'] : [input.zone as string];
   const days = Math.min(Number(input.days) || 7, 30);
 
