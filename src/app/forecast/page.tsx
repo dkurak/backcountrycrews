@@ -554,7 +554,7 @@ function AnalysisTab({ selectedZone, days }: { selectedZone: 'northwest' | 'sout
       </div>
 
       {/* Week Analysis Component */}
-      <WeekAnalysis forecasts={forecasts} />
+      <WeekAnalysis forecasts={forecasts} days={days} />
 
       {/* Danger Trend Summary */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

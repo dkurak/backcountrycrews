@@ -4,6 +4,7 @@ import { Forecast } from '@/types/forecast';
 
 interface WeekAnalysisProps {
   forecasts: Forecast[]; // Most recent first, at least 7 days
+  days?: 7 | 14;
 }
 
 export interface AnalysisInsight {
@@ -14,11 +15,11 @@ export interface AnalysisInsight {
   sentiment: 'positive' | 'negative' | 'neutral';
 }
 
-export function analyzeWeek(forecasts: Forecast[]): AnalysisInsight[] {
+export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] {
   if (forecasts.length < 2) return [];
 
   const insights: AnalysisInsight[] = [];
-  const week = forecasts.slice(0, 7);
+  const week = forecasts.slice(0, days);
   const today = week[0];
 
   // Calculate totals and trends
@@ -210,8 +211,8 @@ export function analyzeWeek(forecasts: Forecast[]): AnalysisInsight[] {
   return insights;
 }
 
-export function WeekAnalysis({ forecasts }: WeekAnalysisProps) {
-  const insights = analyzeWeek(forecasts);
+export function WeekAnalysis({ forecasts, days = 7 }: WeekAnalysisProps) {
+  const insights = analyzeWeek(forecasts, days);
 
   if (insights.length === 0) {
     return null;
@@ -220,7 +221,7 @@ export function WeekAnalysis({ forecasts }: WeekAnalysisProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">7-Day Analysis</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{days}-Day Analysis</h2>
         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">AI Summary*</span>
       </div>
 
