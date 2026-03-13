@@ -166,13 +166,22 @@ FORMATTING RULES — follow these strictly:
 - Always cite the date of the forecast data you reference`;
 
 export async function POST(request: Request) {
-  const { messages } = await request.json();
+  const { messages, sessionId } = await request.json();
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  // Log the question anonymously — fire and forget
+  const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user');
+  if (lastUserMsg && sessionId) {
+    supabase.from('chat_logs').insert({
+      session_id: sessionId,
+      question: lastUserMsg.content,
+    }).then(() => {}).catch(() => {});
+  }
 
   const encoder = new TextEncoder();
 
