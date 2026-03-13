@@ -177,10 +177,10 @@ export async function POST(request: Request) {
   // Log the question anonymously — fire and forget
   const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user');
   if (lastUserMsg && sessionId) {
-    supabase.from('chat_logs').insert({
+    void Promise.resolve(supabase.from('chat_logs').insert({
       session_id: sessionId,
       question: lastUserMsg.content,
-    }).then(() => {}).catch(() => {});
+    })).catch(() => {});
   }
 
   const encoder = new TextEncoder();
