@@ -9,6 +9,7 @@ const DANGER_LABELS: Record<number, string> = {
 };
 
 type SupabaseClient = ReturnType<typeof createClient>;
+type AnyRecord = Record<string, unknown>;
 
 async function executeTool(
   name: string,
@@ -30,20 +31,21 @@ async function executeTool(
 
       if (error || !data) return `No forecast available for ${zone} zone.`;
 
-      const problems = (data.avalanche_problems || [])
-        .map((p: Record<string, string>) =>
+      const row = data as AnyRecord;
+      const problems = ((row.avalanche_problems as AnyRecord[]) || [])
+        .map((p) =>
           `  • ${p.problem_type}: ${p.likelihood || '?'} likelihood, size ${p.size || '?'}`)
         .join('\n');
 
       return [
-        `Zone: ${data.zone_name} (${zone})`,
-        `Date: ${data.valid_date}`,
-        `Overall Danger: ${DANGER_LABELS[data.danger_level]} (${data.danger_level}/5)`,
-        `  Alpine: ${DANGER_LABELS[data.danger_alpine]} | Treeline: ${DANGER_LABELS[data.danger_treeline]} | Below Treeline: ${DANGER_LABELS[data.danger_below_treeline]}`,
-        `Trend: ${data.trend || 'unknown'}`,
-        `Key Message: ${data.key_message || 'none'}`,
-        `Bottom Line: ${data.bottom_line || 'none'}`,
-        `Travel Advice: ${data.travel_advice || 'none'}`,
+        `Zone: ${row.zone_name} (${zone})`,
+        `Date: ${row.valid_date}`,
+        `Overall Danger: ${DANGER_LABELS[row.danger_level as number]} (${row.danger_level}/5)`,
+        `  Alpine: ${DANGER_LABELS[row.danger_alpine as number]} | Treeline: ${DANGER_LABELS[row.danger_treeline as number]} | Below Treeline: ${DANGER_LABELS[row.danger_below_treeline as number]}`,
+        `Trend: ${row.trend || 'unknown'}`,
+        `Key Message: ${row.key_message || 'none'}`,
+        `Bottom Line: ${row.bottom_line || 'none'}`,
+        `Travel Advice: ${row.travel_advice || 'none'}`,
         `Avalanche Problems:\n${problems || '  none recorded'}`,
       ].join('\n');
     }));
@@ -61,11 +63,12 @@ async function executeTool(
 
       if (error || !data) return `No history available for ${zone} zone.`;
 
-      const rows = data.map((f: Record<string, unknown>) =>
+      const history = data as AnyRecord[];
+      const rows = history.map((f) =>
         `${f.valid_date}: ${DANGER_LABELS[f.danger_level as number]} (A:${f.danger_alpine} T:${f.danger_treeline} B:${f.danger_below_treeline}) | ${f.trend || 'steady'} | ${f.key_message || ''}`
       ).join('\n');
 
-      return `${zone.toUpperCase()} ZONE — Last ${data.length} days:\n${rows}`;
+      return `${zone.toUpperCase()} ZONE — Last ${history.length} days:\n${rows}`;
     }));
     return results.join('\n\n');
   }
@@ -81,7 +84,8 @@ async function executeTool(
 
       if (error || !data?.length) return `No weather data for ${zone} zone.`;
 
-      const rows = data.map((w: Record<string, unknown>) => {
+      const weather = data as AnyRecord[];
+      const rows = weather.map((w) => {
         const m = (w.metrics as Record<string, string>) || {};
         return `${w.forecast_date}: Temp ${m.temperature || 'N/A'}, Wind ${m.wind_speed || 'N/A'} ${m.wind_direction || ''}, Snow 24hr: ${m.snowfall_24hr || 'N/A'}, Cloud: ${m.cloud_cover || 'N/A'}`;
       }).join('\n');
