@@ -155,7 +155,15 @@ Always use your tools to fetch current data before answering questions about con
 Danger scale: 1=Low, 2=Moderate, 3=Considerable, 4=High, 5=Extreme
 At Considerable (3) or above, be clear and specific about risks. At High (4) or Extreme (5), strongly advise caution or avoidance.
 
-Keep responses concise and actionable. Use bullet points where helpful. Always cite the date of the forecast data you're referencing.`;
+FORMATTING RULES — follow these strictly:
+- Use **bold** for danger levels, key terms, and important warnings
+- Use bullet points (- ) for lists
+- Use short paragraphs separated by blank lines
+- Do NOT use ### or ## headings
+- Do NOT use markdown tables (no |---|---| format)
+- Do NOT use horizontal rules (---)
+- Keep responses concise and scannable
+- Always cite the date of the forecast data you reference`;
 
 export async function POST(request: Request) {
   const { messages } = await request.json();
