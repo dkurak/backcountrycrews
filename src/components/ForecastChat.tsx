@@ -181,7 +181,7 @@ export function ForecastChat() {
     if (!isOpen) return;
     if (autoLoadedRef.current) return;
     autoLoadedRef.current = true;
-    sendMsgRef.current?.(DAILY_PROMPT);
+    void sendMsgRef.current?.(DAILY_PROMPT);
   }, [isOpen]);
 
   const clearChat = () => {
@@ -192,7 +192,7 @@ export function ForecastChat() {
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void sendMessage(input); }
   };
 
   const lastIsEmpty =
@@ -264,7 +264,7 @@ export function ForecastChat() {
                 </p>
                 <div className="space-y-2">
                   {SUGGESTED_QUESTIONS.map((q) => (
-                    <button key={q} onClick={() => sendMessage(q)} disabled={isLoading}
+                    <button key={q} onClick={() => void sendMessage(q)} disabled={isLoading}
                       className="block w-full text-left text-sm bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-gray-300 transition-colors disabled:opacity-50">
                       {q}
                     </button>
@@ -309,7 +309,7 @@ export function ForecastChat() {
                 className="flex-1 bg-gray-800 text-white placeholder-gray-500 text-sm px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-blue-500 disabled:opacity-50 min-w-0"
               />
               <button
-                onClick={() => sendMessage(input)}
+                onClick={() => void sendMessage(input)}
                 disabled={!input.trim() || isLoading}
                 className="flex-none bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg transition-colors"
               >
