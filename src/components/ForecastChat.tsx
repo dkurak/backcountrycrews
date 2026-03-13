@@ -79,7 +79,7 @@ export function ForecastChat() {
   const isLoadingRef = useRef(false);
   const currentMsgsRef = useRef<Message[]>([]);
   const autoLoadedRef = useRef(false);
-  const sendMsgRef = useRef<(text: string) => void>();
+  const sendMsgRef = useRef<((text: string) => void) | undefined>(undefined);
 
   // Keep refs in sync
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
