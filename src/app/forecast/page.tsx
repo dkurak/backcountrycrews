@@ -61,7 +61,7 @@ function convertForecast(
   };
 }
 
-function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' }) {
+function ConditionsTab({ selectedZone, days }: { selectedZone: 'northwest' | 'southeast'; days: 7 | 14 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +70,7 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
     async function loadForecasts() {
       setLoading(true);
       if (isSupabaseConfigured) {
-        const { forecasts: data, weatherMap } = await getForecastsWithWeather(selectedZone, 14);
+        const { forecasts: data, weatherMap } = await getForecastsWithWeather(selectedZone, days);
         setForecasts(data.map(f => {
           const weatherKey = `${f.zone_id}_${f.valid_date}`;
           return convertForecast(f, weatherMap[weatherKey]);
@@ -81,7 +81,7 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
       setLoading(false);
     }
     loadForecasts();
-  }, [selectedZone]);
+  }, [selectedZone, days]);
 
   const currentForecast = forecasts[0];
   const allForecasts = forecasts;
@@ -328,7 +328,7 @@ function ConditionsTab({ selectedZone }: { selectedZone: 'northwest' | 'southeas
   );
 }
 
-function WeatherTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' }) {
+function WeatherTab({ selectedZone, days }: { selectedZone: 'northwest' | 'southeast'; days: 7 | 14 }) {
   const [weather, setWeather] = useState<DBWeatherForecast[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -336,13 +336,13 @@ function WeatherTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' 
     async function loadWeather() {
       setLoading(true);
       if (isSupabaseConfigured) {
-        const data = await getWeather(selectedZone, 30);
+        const data = await getWeather(selectedZone, days);
         setWeather(data);
       }
       setLoading(false);
     }
     loadWeather();
-  }, [selectedZone]);
+  }, [selectedZone, days]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T12:00:00');
@@ -506,7 +506,7 @@ function WeatherTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' 
   );
 }
 
-function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast' }) {
+function AnalysisTab({ selectedZone, days }: { selectedZone: 'northwest' | 'southeast'; days: 7 | 14 }) {
   const [forecasts, setForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -514,7 +514,7 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
     async function loadForecasts() {
       setLoading(true);
       if (isSupabaseConfigured) {
-        const { forecasts: data, weatherMap } = await getForecastsWithWeather(selectedZone, 14);
+        const { forecasts: data, weatherMap } = await getForecastsWithWeather(selectedZone, days);
         setForecasts(data.map(f => {
           const weatherKey = `${f.zone_id}_${f.valid_date}`;
           return convertForecast(f, weatherMap[weatherKey]);
@@ -525,7 +525,7 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
       setLoading(false);
     }
     loadForecasts();
-  }, [selectedZone]);
+  }, [selectedZone, days]);
 
   if (loading) {
     return (
@@ -535,10 +535,10 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
     );
   }
 
-  if (forecasts.length < 7) {
+  if (forecasts.length < days) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Not enough data for 7-day analysis. Need at least 7 days of forecasts.</p>
+        <p className="text-gray-500">Not enough data for {days}-day analysis. Need at least {days} days of forecasts.</p>
       </div>
     );
   }
@@ -547,9 +547,9 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">7-Day Analysis</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{days}-Day Analysis</h1>
         <p className="text-gray-500">
-          Week in review for {selectedZone === 'southeast' ? 'Southeast' : 'Northwest'} zone
+          Last {days} days for {selectedZone === 'southeast' ? 'Southeast' : 'Northwest'} zone
         </p>
       </div>
 
@@ -560,7 +560,7 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Danger Level Trend</h2>
         <div className="space-y-2">
-          {forecasts.slice(0, 7).map((forecast) => {
+          {forecasts.slice(0, days).map((forecast) => {
             const maxDanger = Math.max(
               forecast.danger_alpine,
               forecast.danger_treeline,
@@ -600,10 +600,10 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
 
       {/* Problem Types This Week */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Problem Types This Week</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Problem Types — Last {days} Days</h2>
         {(() => {
           const problemCounts = new Map<string, number>();
-          forecasts.slice(0, 7).forEach(f => {
+          forecasts.slice(0, days).forEach(f => {
             f.problems.forEach(p => {
               problemCounts.set(p.type, (problemCounts.get(p.type) || 0) + 1);
             });
@@ -624,12 +624,12 @@ function AnalysisTab({ selectedZone }: { selectedZone: 'northwest' | 'southeast'
                     <div className="text-sm font-medium text-gray-900">
                       {type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                     </div>
-                    <div className="text-xs text-gray-500">{count} of 7 days</div>
+                    <div className="text-xs text-gray-500">{count} of {days} days</div>
                   </div>
                   <div className="w-32 bg-gray-100 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${(count / 7) * 100}%` }}
+                      style={{ width: `${(count / days) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -687,6 +687,7 @@ function ForecastContent() {
 
   const [selectedZone, setSelectedZone] = useState<'northwest' | 'southeast'>(initialZone);
   const [activeTab, setActiveTab] = useState<'conditions' | 'weather' | 'analysis'>(initialTab as 'conditions' | 'weather' | 'analysis');
+  const [days, setDays] = useState<7 | 14>(7);
 
   const handleZoneChange = (zone: 'northwest' | 'southeast') => {
     setSelectedZone(zone);
@@ -736,8 +737,8 @@ function ForecastContent() {
         </Link>
       </div>
 
-      {/* Tab selector */}
-      <div className="flex border-b border-gray-200">
+      {/* Tab selector + day toggle */}
+      <div className="flex items-center border-b border-gray-200">
         <button
           onClick={() => handleTabChange('conditions')}
           className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
@@ -756,7 +757,7 @@ function ForecastContent() {
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          7-Day
+          {days}-Day
         </button>
         <button
           onClick={() => handleTabChange('weather')}
@@ -768,15 +769,33 @@ function ForecastContent() {
         >
           Weather
         </button>
+        <div className="ml-auto flex items-center gap-1 pb-1">
+          <button
+            onClick={() => setDays(7)}
+            className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+              days === 7 ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            7d
+          </button>
+          <button
+            onClick={() => setDays(14)}
+            className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+              days === 14 ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            14d
+          </button>
+        </div>
       </div>
 
       {/* Tab content */}
       {activeTab === 'conditions' ? (
-        <ConditionsTab selectedZone={selectedZone} />
+        <ConditionsTab selectedZone={selectedZone} days={days} />
       ) : activeTab === 'analysis' ? (
-        <AnalysisTab selectedZone={selectedZone} />
+        <AnalysisTab selectedZone={selectedZone} days={days} />
       ) : (
-        <WeatherTab selectedZone={selectedZone} />
+        <WeatherTab selectedZone={selectedZone} days={days} />
       )}
     </div>
   );
