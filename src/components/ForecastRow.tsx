@@ -41,16 +41,12 @@ function getTotalProblemCoverage(problems: AvalancheProblem[]): number {
 function calculateTrend(current: Forecast, previous?: Forecast): ForecastTrend | undefined {
   if (!previous) return undefined;
 
-  const currentMaxDanger = Math.max(
-    current.danger_alpine,
-    current.danger_treeline,
-    current.danger_below_treeline
-  );
-  const previousMaxDanger = Math.max(
-    previous.danger_alpine,
-    previous.danger_treeline,
-    previous.danger_below_treeline
-  );
+  // Use sum of all three elevation danger levels — captures "2 orange + 1 yellow → 3 orange" as worsening
+  // even when max danger is unchanged. Danger is weighted most heavily.
+  const currentDangerSum =
+    current.danger_alpine + current.danger_treeline + current.danger_below_treeline;
+  const previousDangerSum =
+    previous.danger_alpine + previous.danger_treeline + previous.danger_below_treeline;
 
   // Check for new problem types
   const currentTypes = new Set(current.problems.map(p => p.type));
@@ -61,21 +57,20 @@ function calculateTrend(current: Forecast, previous?: Forecast): ForecastTrend |
   const currentCoverage = getTotalProblemCoverage(current.problems);
   const previousCoverage = getTotalProblemCoverage(previous.problems);
 
-  // Determine trend based on multiple factors
-  // Worsening: danger increased, or new problem type, or significantly more coverage
-  if (currentMaxDanger > previousMaxDanger) {
+  // Danger is the primary signal — always wins over problem count
+  if (currentDangerSum > previousDangerSum) {
     return 'worsening';
   }
+  if (currentDangerSum < previousDangerSum) {
+    return 'improving';
+  }
+
+  // Danger is equal — check secondary signals
   if (hasNewProblemType) {
     return 'new_problem';
   }
   if (currentCoverage > previousCoverage * 1.25) {
     return 'worsening';
-  }
-
-  // Improving: danger decreased, or problem resolved, or significantly less coverage
-  if (currentMaxDanger < previousMaxDanger) {
-    return 'improving';
   }
   if (current.problems.length < previous.problems.length) {
     return 'improving';
@@ -84,7 +79,7 @@ function calculateTrend(current: Forecast, previous?: Forecast): ForecastTrend |
     return 'improving';
   }
 
-  // Steady: no significant changes
+  // No significant changes
   return 'steady';
 }
 
