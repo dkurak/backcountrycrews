@@ -78,18 +78,20 @@ function SegmentedBar({ monthData, total, months }: { monthData: Record<string, 
 
 function DangerSection({ stats }: { stats: SeasonStats }) {
   const levels = [1, 2, 3, 4, 5] as const;
+  const maxCount = Math.max(...levels.map(l => stats.dangerDistribution[l] || 0));
   return (
     <div className="space-y-2">
       {levels.map(level => {
         const count = stats.dangerDistribution[level] || 0;
         const pct = stats.totalDays > 0 ? (count / stats.totalDays) * 100 : 0;
         if (count === 0) return null;
+        const barPct = maxCount > 0 ? (count / maxCount) * 100 : 0;
         const monthData = stats.dangerByMonth[level] || {};
         return (
           <div key={level} className="flex items-center gap-3">
             <div className="w-24 text-sm text-gray-600 text-right">{DANGER_LABELS[level as DangerLevel]}</div>
             <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full" style={{ width: `${Math.max(pct, 2)}%` }}>
+              <div className="h-full" style={{ width: `${Math.max(barPct, 3)}%` }}>
                 <SegmentedBar monthData={monthData} total={count} months={stats.months} />
               </div>
             </div>
@@ -103,15 +105,17 @@ function DangerSection({ stats }: { stats: SeasonStats }) {
 }
 
 function ProblemSection({ stats }: { stats: SeasonStats }) {
+  const maxCount = stats.problemFrequency.length > 0 ? stats.problemFrequency[0].count : 0;
   return (
     <div className="space-y-3">
       {stats.problemFrequency.map(problem => {
+        const barPct = maxCount > 0 ? (problem.count / maxCount) * 100 : 0;
         const monthData = stats.problemByMonth[problem.type] || {};
         return (
           <div key={problem.type} className="flex items-center gap-3">
             <div className="w-32 text-sm text-gray-700 font-medium">{problem.label}</div>
             <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full" style={{ width: `${Math.max(problem.percentage, 2)}%` }}>
+              <div className="h-full" style={{ width: `${Math.max(barPct, 3)}%` }}>
                 <SegmentedBar monthData={monthData} total={problem.count} months={stats.months} />
               </div>
             </div>
