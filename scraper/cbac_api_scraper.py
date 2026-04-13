@@ -571,7 +571,7 @@ def parse_weekly_summary(product_id: int) -> Optional[WeeklySummary]:
         body=body,
         body_html=body_html,
         author=author,
-        report_url=f"https://cbavalanchecenter.org/observations/#/product/{product_id}",
+        report_url=f"https://cbavalanchecenter.org/forecasts/#/all/{product_id}",
         product_id=product_id,
         raw_data=data,
     )
