@@ -189,69 +189,119 @@ export default function HomePage() {
       {/* Activity showcase grid */}
       <ActivityShowcase offSeason={offSeason} />
 
-      {/* Three large CTA buttons */}
-      <div className="grid gap-4">
-        {/* Check Forecast CTA */}
-        <Link
-          href="/forecast"
-          className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-          style={{
-            background: `linear-gradient(to right, ${colors.primary.from}, ${colors.primary.to})`,
-            color: colors.primary.text,
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="text-4xl">🏔️</div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">{offSeason ? 'Off-Season Update' : 'Check Forecast'}</h2>
-              <p style={{ color: colors.primary.subtext }}>{offSeason ? 'Weekly updates & season summary' : 'Avalanche conditions and weather'}</p>
+      {/* CTA cards — seasonal layout */}
+      {offSeason ? (
+        <div className="grid gap-4">
+          {/* Ready for Summer */}
+          {SECTION_FLAGS.trips && (
+            <div className="rounded-2xl p-6 shadow-lg bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="text-4xl">&#x2600;&#xFE0F;</div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold">Ready for Summer</h2>
+                  <p className="text-emerald-100">Plan your next adventure with your crew</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Link
+                  href={user ? "/trips/new" : "/login"}
+                  className="flex-1 text-center px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
+                >
+                  Post a Trip
+                </Link>
+                <Link
+                  href="/trips"
+                  className="flex-1 text-center px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
+                >
+                  Browse Trips
+                </Link>
+              </div>
             </div>
-            <div className="text-2xl">→</div>
-          </div>
-        </Link>
+          )}
 
-        {/* Post a Trip CTA - Primary action */}
-        {SECTION_FLAGS.trips && (
+          {/* Off-Season Update */}
           <Link
-            href={user ? "/trips/new" : "/login"}
+            href="/forecast"
             className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
             style={{
-              background: `linear-gradient(to right, ${colors.secondary.from}, ${colors.secondary.to})`,
-              color: colors.secondary.text,
+              background: `linear-gradient(to right, ${colors.primary.from}, ${colors.primary.to})`,
+              color: colors.primary.text,
             }}
           >
             <div className="flex items-center gap-4">
-              <div className="text-4xl">{offSeason ? '🏔️' : '⛷️'}</div>
+              <div className="text-4xl">&#x1F3D4;&#xFE0F;</div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold">Post a Trip</h2>
-                <p style={{ color: colors.secondary.subtext }}>Plan your adventure and invite your crew</p>
+                <h2 className="text-xl font-bold">Off-Season Update</h2>
+                <p style={{ color: colors.primary.subtext }}>Weekly CBAC conditions report</p>
               </div>
-              <div className="text-2xl">→</div>
+              <div className="text-2xl">&rarr;</div>
             </div>
           </Link>
-        )}
-
-        {/* Browse Trips CTA */}
-        {SECTION_FLAGS.trips && (
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {/* Check Forecast CTA */}
           <Link
-            href="/trips"
+            href="/forecast"
             className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
             style={{
-              background: `linear-gradient(to right, ${colors.tertiary.from}, ${colors.tertiary.to})`,
-              color: colors.tertiary.text,
+              background: `linear-gradient(to right, ${colors.primary.from}, ${colors.primary.to})`,
+              color: colors.primary.text,
             }}
           >
             <div className="flex items-center gap-4">
-              <div className="text-4xl">🗓️</div>
+              <div className="text-4xl">&#x1F3D4;&#xFE0F;</div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold">Browse Trips</h2>
-                <p style={{ color: colors.tertiary.subtext }}>Find upcoming adventures near you</p>
+                <h2 className="text-xl font-bold">Check Forecast</h2>
+                <p style={{ color: colors.primary.subtext }}>Avalanche conditions and weather</p>
               </div>
-              <div className="text-2xl">→</div>
+              <div className="text-2xl">&rarr;</div>
             </div>
           </Link>
-        )}
-      </div>
+
+          {/* Post a Trip CTA */}
+          {SECTION_FLAGS.trips && (
+            <Link
+              href={user ? "/trips/new" : "/login"}
+              className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
+              style={{
+                background: `linear-gradient(to right, ${colors.secondary.from}, ${colors.secondary.to})`,
+                color: colors.secondary.text,
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="text-4xl">&#x26F7;&#xFE0F;</div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold">Post a Trip</h2>
+                  <p style={{ color: colors.secondary.subtext }}>Plan your adventure and invite your crew</p>
+                </div>
+                <div className="text-2xl">&rarr;</div>
+              </div>
+            </Link>
+          )}
+
+          {/* Browse Trips CTA */}
+          {SECTION_FLAGS.trips && (
+            <Link
+              href="/trips"
+              className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
+              style={{
+                background: `linear-gradient(to right, ${colors.tertiary.from}, ${colors.tertiary.to})`,
+                color: colors.tertiary.text,
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="text-4xl">&#x1F5D3;&#xFE0F;</div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold">Browse Trips</h2>
+                  <p style={{ color: colors.tertiary.subtext }}>Find upcoming adventures near you</p>
+                </div>
+                <div className="text-2xl">&rarr;</div>
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Notifications section for logged-in users */}
       {user && hasNotifications && SECTION_FLAGS.trips && (
