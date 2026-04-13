@@ -9,8 +9,8 @@ import { ActivityType } from './partners';
 // fieldGuide – /field-guide page
 export const SECTION_FLAGS = {
   forecast: true,
-  trips: false,
-  partners: false,
+  trips: true,
+  partners: true,
   fieldGuide: true,
 } as const;
 
