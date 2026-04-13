@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getSeasonBounds, getSeasonForecasts, listSeasons, SeasonBounds, SeasonInfo } from '@/lib/supabase';
 import { Forecast } from '@/types/forecast';
-import { convertForecast } from '@/lib/forecastAnalysis';
-import { analyzeseason, SeasonStats } from '@/lib/forecastAnalysis';
+import { convertForecast, analyzeseason } from '@/lib/forecastAnalysis';
 import { SeasonAnalysis } from '@/components/SeasonAnalysis';
 
 function formatSeasonLabel(bounds: { season_start: string; season_end: string }): string {
@@ -17,11 +16,17 @@ function formatSeasonLabel(bounds: { season_start: string; season_end: string })
   return `${startYear}-${String(endYear).slice(2)} Season`;
 }
 
+const MONTH_LABELS: Record<number, string> = {
+  0: 'Jan', 1: 'Feb', 2: 'Mar', 3: 'Apr', 4: 'May', 5: 'Jun',
+  6: 'Jul', 7: 'Aug', 8: 'Sep', 9: 'Oct', 10: 'Nov', 11: 'Dec',
+};
+
 export default function SeasonPage() {
   const [seasons, setSeasons] = useState<SeasonInfo[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<SeasonBounds | null>(null);
   const [selectedZone, setSelectedZone] = useState<string>('');
-  const [stats, setStats] = useState<SeasonStats | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string>(''); // '' = all, '2026-01' = Jan 2026
+  const [allForecasts, setAllForecasts] = useState<Forecast[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load available seasons
@@ -29,8 +34,6 @@ export default function SeasonPage() {
     async function load() {
       const allSeasons = await listSeasons();
       setSeasons(allSeasons);
-
-      // Default to the most recent season
       if (allSeasons.length > 0) {
         const latest = allSeasons[0];
         setSelectedSeason({ season_start: latest.season_start, season_end: latest.season_end });
@@ -46,6 +49,7 @@ export default function SeasonPage() {
 
     async function loadData() {
       setLoading(true);
+      setSelectedMonth(''); // Reset month filter on season/zone change
       const { forecasts: dbForecasts, weatherMap } = await getSeasonForecasts(
         selectedSeason!.season_start,
         selectedSeason!.season_end,
@@ -57,11 +61,35 @@ export default function SeasonPage() {
         return convertForecast(f, weatherMap[weatherKey]);
       });
 
-      setStats(analyzeseason(forecasts));
+      setAllForecasts(forecasts);
       setLoading(false);
     }
     loadData();
   }, [selectedSeason, selectedZone]);
+
+  // Derive available months from data
+  const availableMonths = useMemo(() => {
+    const months = new Map<string, string>(); // '2026-01' -> 'Jan'
+    for (const f of allForecasts) {
+      const date = new Date(f.valid_date + 'T12:00:00');
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!months.has(key)) {
+        months.set(key, `${MONTH_LABELS[date.getMonth()]}`);
+      }
+    }
+    // Sort chronologically
+    return Array.from(months.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [allForecasts]);
+
+  // Filter forecasts by selected month and compute stats
+  const stats = useMemo(() => {
+    if (allForecasts.length === 0) return null;
+    const filtered = selectedMonth
+      ? allForecasts.filter(f => f.valid_date.startsWith(selectedMonth))
+      : allForecasts;
+    if (filtered.length === 0) return null;
+    return analyzeseason(filtered);
+  }, [allForecasts, selectedMonth]);
 
   const handleSeasonChange = (idx: number) => {
     const s = seasons[idx];
@@ -77,7 +105,9 @@ export default function SeasonPage() {
             {selectedSeason ? formatSeasonLabel(selectedSeason) : 'Season'} Summary
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Full-season analysis from CBAC daily forecasts
+            {selectedMonth
+              ? `${availableMonths.find(([k]) => k === selectedMonth)?.[1] || ''} analysis from CBAC daily forecasts`
+              : 'Full-season analysis from CBAC daily forecasts'}
           </p>
         </div>
         <Link
@@ -128,6 +158,35 @@ export default function SeasonPage() {
           ))}
         </div>
       </div>
+
+      {/* Month filter */}
+      {availableMonths.length > 1 && (
+        <div className="flex flex-wrap gap-1">
+          <button
+            onClick={() => setSelectedMonth('')}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              selectedMonth === ''
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            All
+          </button>
+          {availableMonths.map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setSelectedMonth(key)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                selectedMonth === key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (

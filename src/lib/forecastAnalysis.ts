@@ -173,7 +173,7 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
     const maxSnow = Math.max(...dayForecasts.map(f => parseFloat(f.weather?.snowfall_24hr || '0') || 0));
     totalSnowfall += maxSnow;
   }
-  notableStorms.sort((a, b) => b.snowfall - a.snowfall);
+  notableStorms.sort((a, b) => a.date.localeCompare(b.date));
 
   // Wind events
   let windEventDays = 0;
@@ -245,7 +245,7 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
     peakDangerPeriod: peakPeriod,
     problemFrequency,
     windEventDays,
-    notableStorms: notableStorms.slice(0, 10),
+    notableStorms,
     coldClearDays,
     warmestDay,
     coldestDay,
