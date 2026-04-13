@@ -1,7 +1,7 @@
 'use client';
 
 import { SeasonStats } from '@/lib/forecastAnalysis';
-import { DANGER_LABELS, DANGER_COLORS, DangerLevel } from '@/types/forecast';
+import { DANGER_LABELS, DangerLevel } from '@/types/forecast';
 
 interface SeasonAnalysisProps {
   stats: SeasonStats;
@@ -128,6 +128,150 @@ function ProblemSection({ stats }: { stats: SeasonStats }) {
   );
 }
 
+function WeeklySnowfallChart({ weeks }: { weeks: { weekStart: string; weekEnd: string; snowfall: number; cumulative: number }[] }) {
+  const maxSnow = Math.max(...weeks.map(w => w.snowfall), 1);
+  const maxCumulative = weeks[weeks.length - 1]?.cumulative || 1;
+  const chartHeight = 160;
+
+  return (
+    <div>
+      <div className="relative" style={{ height: chartHeight + 32 }}>
+        {/* Cumulative line */}
+        <svg className="absolute inset-0 w-full" style={{ height: chartHeight }} viewBox={`0 0 ${weeks.length * 100} ${chartHeight}`} preserveAspectRatio="none">
+          <polyline
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth="3"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            points={weeks.map((w, i) => {
+              const x = (i + 0.5) * 100;
+              const y = chartHeight - (w.cumulative / maxCumulative) * (chartHeight - 8);
+              return `${x},${y}`;
+            }).join(' ')}
+          />
+        </svg>
+        {/* Bars */}
+        <div className="relative flex items-end gap-px" style={{ height: chartHeight }}>
+          {weeks.map((week, i) => {
+            const barH = maxSnow > 0 ? (week.snowfall / maxSnow) * (chartHeight - 20) : 0;
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: chartHeight }}>
+                {week.snowfall > 0 && (
+                  <div className="text-[10px] text-gray-500 mb-0.5">{week.snowfall}&quot;</div>
+                )}
+                <div
+                  className="w-full rounded-t bg-blue-400/70"
+                  style={{ height: Math.max(barH, week.snowfall > 0 ? 3 : 0) }}
+                  title={`${formatDate(week.weekStart)}–${formatDate(week.weekEnd)}: ${week.snowfall}" (${week.cumulative}" total)`}
+                />
+              </div>
+            );
+          })}
+        </div>
+        {/* Cumulative labels */}
+        <div className="absolute top-0 right-1 text-xs font-medium text-blue-600">{maxCumulative}&quot;</div>
+        <div className="absolute bottom-8 right-1 text-xs text-blue-400">0&quot;</div>
+        {/* Date labels */}
+        <div className="flex mt-1">
+          {weeks.map((week, i) => (
+            <div key={i} className="flex-1 text-center">
+              <div className="text-[10px] text-gray-400 leading-tight">{formatDate(week.weekStart).split(' ')[0]}</div>
+              <div className="text-[10px] text-gray-400 leading-tight">{formatDate(week.weekStart).split(' ')[1]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DailySnowfallChart({ days }: { days: { date: string; snowfall: number; cumulative: number }[] }) {
+  const maxSnow = Math.max(...days.map(d => d.snowfall), 1);
+  const maxCumulative = days[days.length - 1]?.cumulative || 1;
+  const chartHeight = 160;
+
+  // Month boundary labels
+  const monthLabels: { index: number; label: string }[] = [];
+  let lastMonth = '';
+  for (let i = 0; i < days.length; i++) {
+    const d = new Date(days[i].date + 'T12:00:00');
+    const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (mk !== lastMonth) {
+      monthLabels.push({ index: i, label: MONTH_SHORT[String(d.getMonth() + 1).padStart(2, '0')] || mk });
+      lastMonth = mk;
+    }
+  }
+
+  return (
+    <div>
+      <div className="relative" style={{ height: chartHeight + 24 }}>
+        {/* Cumulative area */}
+        <svg className="absolute inset-0 w-full" style={{ height: chartHeight }} viewBox={`0 0 ${days.length} ${chartHeight}`} preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <polygon
+            fill="url(#cumGrad)"
+            points={`0,${chartHeight} ${days.map((d, i) => {
+              const y = chartHeight - (d.cumulative / maxCumulative) * (chartHeight - 8);
+              return `${i + 0.5},${y}`;
+            }).join(' ')} ${days.length},${chartHeight}`}
+          />
+          <polyline
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth="2"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            points={days.map((d, i) => {
+              const y = chartHeight - (d.cumulative / maxCumulative) * (chartHeight - 8);
+              return `${i + 0.5},${y}`;
+            }).join(' ')}
+          />
+        </svg>
+        {/* Bars */}
+        <div className="relative flex items-end" style={{ height: chartHeight }}>
+          {days.map((day, i) => {
+            const barH = maxSnow > 0 ? (day.snowfall / maxSnow) * (chartHeight - 20) : 0;
+            const isNotable = day.snowfall >= 6;
+            return (
+              <div
+                key={i}
+                className="flex-1"
+                style={{ height: chartHeight, display: 'flex', alignItems: 'flex-end' }}
+              >
+                <div
+                  className={`w-full ${isNotable ? 'bg-blue-500' : 'bg-blue-300/70'}`}
+                  style={{ height: Math.max(barH, day.snowfall > 0 ? 2 : 0) }}
+                  title={`${formatDate(day.date)}: ${day.snowfall}" (${day.cumulative}" total)`}
+                />
+              </div>
+            );
+          })}
+        </div>
+        {/* Cumulative labels */}
+        <div className="absolute top-0 right-1 text-xs font-medium text-blue-600">{maxCumulative}&quot;</div>
+        {/* Month labels */}
+        <div className="relative h-5 mt-1">
+          {monthLabels.map((ml, i) => (
+            <div
+              key={i}
+              className="absolute text-[11px] font-medium text-gray-500"
+              style={{ left: `${(ml.index / days.length) * 100}%` }}
+            >
+              {ml.label}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SeasonAnalysis({ stats }: SeasonAnalysisProps) {
   if (stats.totalDays === 0) {
     return (
@@ -201,6 +345,28 @@ export function SeasonAnalysis({ stats }: SeasonAnalysisProps) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Weekly snowfall timeline */}
+      {stats.weeklySnowfall.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Weekly Snowfall</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Bar height = weekly total &middot; Line = cumulative season total
+          </p>
+          <WeeklySnowfallChart weeks={stats.weeklySnowfall} />
+        </div>
+      )}
+
+      {/* Daily snowfall timeline */}
+      {stats.dailySnowfall.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Daily Snowfall</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Each bar is one day &middot; Line = cumulative season total
+          </p>
+          <DailySnowfallChart days={stats.dailySnowfall} />
         </div>
       )}
 

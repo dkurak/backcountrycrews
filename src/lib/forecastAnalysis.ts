@@ -61,6 +61,8 @@ export interface SeasonStats {
   problemFrequency: { type: string; label: string; count: number; percentage: number }[];
   problemByMonth: Record<string, Record<string, number>>; // problem type -> { '2026-01': count }
   months: string[]; // ordered list of month keys present in data
+  weeklySnowfall: { weekStart: string; weekEnd: string; snowfall: number; cumulative: number }[];
+  dailySnowfall: { date: string; snowfall: number; cumulative: number }[];
   windEventDays: number;
   notableStorms: { date: string; snowfall: number }[];
   coldClearDays: number;
@@ -83,6 +85,8 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
       problemFrequency: [],
       problemByMonth: {},
       months: [],
+      weeklySnowfall: [],
+      dailySnowfall: [],
       windEventDays: 0,
       notableStorms: [],
       coldClearDays: 0,
@@ -201,6 +205,39 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
   }
   notableStorms.sort((a, b) => a.date.localeCompare(b.date));
 
+  // Daily snowfall with cumulative
+  const dailySnowfall: { date: string; snowfall: number; cumulative: number }[] = [];
+  let cumulative = 0;
+  for (const date of dates) {
+    const dayForecasts = byDate.get(date) || [];
+    const maxSnow = Math.max(...dayForecasts.map(f => parseFloat(f.weather?.snowfall_24hr || '0') || 0));
+    cumulative += maxSnow;
+    dailySnowfall.push({ date, snowfall: Math.round(maxSnow * 10) / 10, cumulative: Math.round(cumulative) });
+  }
+
+  // Weekly snowfall with cumulative
+  const weeklySnowfall: { weekStart: string; weekEnd: string; snowfall: number; cumulative: number }[] = [];
+  let weekSnow = 0;
+  let weekStart = dates[0];
+  let weekDayCount = 0;
+  for (let i = 0; i < dailySnowfall.length; i++) {
+    weekSnow += dailySnowfall[i].snowfall;
+    weekDayCount++;
+    if (weekDayCount === 7 || i === dailySnowfall.length - 1) {
+      weeklySnowfall.push({
+        weekStart,
+        weekEnd: dailySnowfall[i].date,
+        snowfall: Math.round(weekSnow),
+        cumulative: dailySnowfall[i].cumulative,
+      });
+      weekSnow = 0;
+      weekDayCount = 0;
+      if (i + 1 < dailySnowfall.length) {
+        weekStart = dailySnowfall[i + 1].date;
+      }
+    }
+  }
+
   // Wind events
   let windEventDays = 0;
   for (const [, dayForecasts] of byDate) {
@@ -277,6 +314,8 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
     problemFrequency,
     problemByMonth,
     months,
+    weeklySnowfall,
+    dailySnowfall,
     windEventDays,
     notableStorms,
     coldClearDays,
