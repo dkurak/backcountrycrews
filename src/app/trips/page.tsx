@@ -627,15 +627,14 @@ function TripsPageContent() {
       )}
 
       {/* Activity Stats Cards - only show if multiple activities enabled or there's data for multiple */}
-      {allPosts.length > 0 && enabledActivities.length > 1 && (
+      {enabledActivities.length > 1 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="text-sm text-gray-600 mb-3">
-            Activities ({allPosts.length} total){selectedActivities.size > 0 && ` · ${posts.length} selected`}
+            Activities{allPosts.length > 0 && ` (${allPosts.length} total)`}{selectedActivities.size > 0 && ` · ${posts.length} selected`}
           </div>
           <div className="flex flex-wrap gap-2">
             {enabledActivities.map((activity) => {
               const count = activityCounts[activity] || 0;
-              if (count === 0) return null;
               const isSelected = selectedActivities.has(activity);
               return (
                 <button
@@ -651,7 +650,7 @@ function TripsPageContent() {
                     <span>{ACTIVITY_ICONS[activity]}</span>
                     <span>{ACTIVITY_LABELS[activity]}</span>
                   </div>
-                  <div className="text-lg font-bold">{count}</div>
+                  {count > 0 && <div className="text-lg font-bold">{count}</div>}
                 </button>
               );
             })}
