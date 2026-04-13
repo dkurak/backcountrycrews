@@ -8,6 +8,7 @@ import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
 import { getTripsAwaitingResponse, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, UserNotification, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
 import { getTripPath } from '@/lib/slugify';
 import { SECTION_FLAGS } from '@/lib/featureFlags';
+import { isOffSeason } from '@/lib/supabase';
 
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -126,6 +127,7 @@ export default function HomePage() {
   const [awaitingResponse, setAwaitingResponse] = useState<TourPost[]>([]);
   const [needsAttention, setNeedsAttention] = useState<TourPost[]>([]);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
+  const [offSeason, setOffSeason] = useState(false);
 
   // Load user's notifications when logged in
   useEffect(() => {
@@ -143,6 +145,11 @@ export default function HomePage() {
     }
     loadNotifications();
   }, [user]);
+
+  // Detect off-season for CTA text
+  useEffect(() => {
+    isOffSeason().then(setOffSeason);
+  }, []);
 
   const handleDismissNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -188,8 +195,8 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <div className="text-4xl">🏔️</div>
             <div className="flex-1">
-              <h2 className="text-xl font-bold">Check Forecast</h2>
-              <p style={{ color: colors.primary.subtext }}>Avalanche conditions and weather</p>
+              <h2 className="text-xl font-bold">{offSeason ? 'Off-Season Update' : 'Check Forecast'}</h2>
+              <p style={{ color: colors.primary.subtext }}>{offSeason ? 'Weekly updates & season summary' : 'Avalanche conditions and weather'}</p>
             </div>
             <div className="text-2xl">→</div>
           </div>

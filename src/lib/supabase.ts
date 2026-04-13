@@ -240,3 +240,169 @@ export async function getForecastsWithWeather(zoneId?: string, limit = 30) {
 
   return withTimeout(fetchData(), 20000, emptyResult)
 }
+
+// Weekly reports (off-season narrative summaries)
+export interface DBWeeklyReport {
+  id: string
+  report_date: string
+  title: string | null
+  body: string
+  body_html: string | null
+  author: string | null
+  report_url: string | null
+  product_id: number | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SeasonBounds {
+  season_start: string
+  season_end: string
+}
+
+export interface SeasonInfo {
+  season_start: string
+  season_end: string
+  forecast_count: number
+}
+
+// Fetch the latest weekly report
+export async function getLatestWeeklyReport(): Promise<DBWeeklyReport | null> {
+  if (!supabase) return null
+
+  const fetchData = async () => {
+    const { data, error } = await supabase
+      .from('weekly_reports')
+      .select('*')
+      .order('report_date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error) {
+      console.error('Error fetching weekly report:', error)
+      return null
+    }
+
+    return data as DBWeeklyReport
+  }
+
+  return withTimeout(fetchData(), 20000, null)
+}
+
+// Get season boundaries for a given date (auto-detected from data)
+export async function getSeasonBounds(targetDate?: string): Promise<SeasonBounds | null> {
+  if (!supabase) return null
+
+  const fetchData = async () => {
+    const { data, error } = await supabase.rpc('get_season_bounds', {
+      target_date: targetDate || new Date().toISOString().split('T')[0]
+    })
+
+    if (error || !data || data.length === 0) {
+      console.error('Error fetching season bounds:', error)
+      return null
+    }
+
+    return data[0] as SeasonBounds
+  }
+
+  return withTimeout(fetchData(), 20000, null)
+}
+
+// List all detected seasons
+export async function listSeasons(): Promise<SeasonInfo[]> {
+  if (!supabase) return []
+
+  const fetchData = async () => {
+    const { data, error } = await supabase.rpc('list_seasons')
+
+    if (error) {
+      console.error('Error listing seasons:', error)
+      return []
+    }
+
+    return (data || []) as SeasonInfo[]
+  }
+
+  return withTimeout(fetchData(), 20000, [])
+}
+
+// Determine if we're in off-season (last daily forecast > 7 days ago)
+export async function isOffSeason(): Promise<boolean> {
+  if (!supabase) return false
+
+  const fetchData = async () => {
+    const { data, error } = await supabase
+      .from('forecasts')
+      .select('valid_date')
+      .order('valid_date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) return true
+
+    const lastDate = new Date(data.valid_date)
+    const daysSince = (Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+    return daysSince > 7
+  }
+
+  return withTimeout(fetchData(), 20000, false)
+}
+
+// Fetch all forecasts within a season range (for season summary)
+export async function getSeasonForecasts(seasonStart: string, seasonEnd: string, zoneId?: string) {
+  const emptyResult = { forecasts: [] as (DBForecast & { avalanche_problems: DBAvalancheProblem[] })[], weatherMap: {} as Record<string, DBWeatherForecast> }
+  if (!supabase) return emptyResult
+
+  const fetchData = async () => {
+    let forecastQuery = supabase
+      .from('forecasts')
+      .select(`
+        *,
+        avalanche_problems (*)
+      `)
+      .gte('valid_date', seasonStart)
+      .lte('valid_date', seasonEnd)
+      .order('valid_date', { ascending: false })
+      .order('problem_number', { referencedTable: 'avalanche_problems', ascending: true })
+
+    if (zoneId) {
+      forecastQuery = forecastQuery.eq('zone_id', zoneId)
+    }
+
+    let weatherQuery = supabase
+      .from('weather_forecasts')
+      .select('*')
+      .gte('forecast_date', seasonStart)
+      .lte('forecast_date', seasonEnd)
+      .order('forecast_date', { ascending: false })
+
+    if (zoneId) {
+      weatherQuery = weatherQuery.eq('zone_id', zoneId)
+    }
+
+    const [forecastResult, weatherResult] = await Promise.all([
+      forecastQuery,
+      weatherQuery,
+    ])
+
+    if (forecastResult.error) {
+      console.error('Error fetching season forecasts:', forecastResult.error)
+      return emptyResult
+    }
+
+    const weatherMap: Record<string, DBWeatherForecast> = {}
+    if (weatherResult.data) {
+      for (const w of weatherResult.data) {
+        weatherMap[`${w.zone_id}_${w.forecast_date}`] = w
+      }
+    }
+
+    return {
+      forecasts: (forecastResult.data || []) as (DBForecast & { avalanche_problems: DBAvalancheProblem[] })[],
+      weatherMap,
+    }
+  }
+
+  return withTimeout(fetchData(), 30000, emptyResult)
+}

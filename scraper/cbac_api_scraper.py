@@ -471,6 +471,112 @@ def scrape_all_zones(days: int = 7) -> List[Forecast]:
     return all_forecasts
 
 
+@dataclass
+class WeeklySummary:
+    report_date: str
+    title: str
+    body: str
+    body_html: str
+    author: Optional[str]
+    report_url: Optional[str]
+    product_id: int
+    raw_data: Dict[str, Any]
+
+
+def get_weekly_summaries(limit: int = 5) -> List[Dict]:
+    """
+    Fetch CBAC weekly/off-season summary products from the API.
+
+    Tries product_type=summary first, then falls back to scanning
+    all products for non-forecast/non-weather types.
+    """
+    # Try summary product type first
+    url = f"{AVALANCHE_ORG_API}/products?avalanche_center_id={CBAC_CENTER_ID}&product_type=summary"
+
+    try:
+        resp = requests.get(url, timeout=30)
+        resp.raise_for_status()
+        products = resp.json()
+
+        if not products:
+            # Fallback: fetch all products and filter for summary-like types
+            print("  No 'summary' products found, trying all product types...")
+            url_all = f"{AVALANCHE_ORG_API}/products?avalanche_center_id={CBAC_CENTER_ID}"
+            resp_all = requests.get(url_all, timeout=30)
+            resp_all.raise_for_status()
+            all_products = resp_all.json()
+
+            # Filter out forecasts and weather — keep everything else
+            forecast_types = {'forecast', 'weather', 'warning', 'watch', 'special'}
+            products = [
+                p for p in all_products
+                if p.get('product_type', '').lower() not in forecast_types
+            ]
+
+            if products:
+                types_found = set(p.get('product_type', 'unknown') for p in products)
+                print(f"  Found non-forecast products of type(s): {', '.join(types_found)}")
+
+        products.sort(key=lambda x: x.get('published_time', ''), reverse=True)
+        return products[:limit]
+
+    except Exception as e:
+        print(f"Error fetching weekly summaries: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+def parse_weekly_summary(product_id: int) -> Optional[WeeklySummary]:
+    """Fetch and parse a single weekly summary product."""
+    data = get_forecast_by_id(product_id)  # reuse existing product fetcher
+    if not data:
+        return None
+
+    published = data.get('published_time', '')[:10]
+
+    import re
+    def clean_html(text):
+        if not text:
+            return ""
+        text = re.sub(r'</p>\s*<p[^>]*>', '\n\n', text)
+        text = re.sub(r'<br\s*/?>', '\n', text)
+        text = re.sub(r'<p[^>]*>', '', text)
+        text = re.sub(r'</p>', '\n\n', text)
+        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r'[ \t]+', ' ', text)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        text = text.replace('&nbsp;', ' ')
+        return text.strip()
+
+    # Summary products may store content in various fields
+    body_html = (
+        data.get('bottom_line', '') or
+        data.get('body', '') or
+        data.get('hazard_discussion', '') or
+        ''
+    )
+    body = clean_html(body_html)
+
+    if not body:
+        print(f"  Warning: No body content found for product {product_id}")
+        return None
+
+    title = data.get('title', 'Weekly Summary')
+    author = data.get('author', None)
+
+    return WeeklySummary(
+        report_date=published,
+        title=title,
+        body=body,
+        body_html=body_html,
+        author=author,
+        report_url=f"https://cbavalanchecenter.org/observations/#/product/{product_id}",
+        product_id=product_id,
+        raw_data=data,
+    )
+
+
 def save_forecasts(forecasts: List[Forecast], filename: str = "api_forecasts.json"):
     """Save forecasts to JSON file."""
     data = [asdict(f) for f in forecasts]

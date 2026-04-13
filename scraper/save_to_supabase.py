@@ -42,7 +42,10 @@ except ImportError:
 from cbac_api_scraper import (
     scrape_all_zones,
     scrape_zone_forecasts,
+    get_weekly_summaries,
+    parse_weekly_summary,
     Forecast,
+    WeeklySummary,
     ZONES,
 )
 
@@ -394,6 +397,65 @@ def save_forecast(client: Client, forecast: Forecast) -> Optional[str]:
         return None
 
 
+def save_weekly_report(client: Client, summary: WeeklySummary) -> Optional[str]:
+    """Save a weekly summary report to Supabase."""
+    try:
+        report_data = {
+            "report_date": summary.report_date,
+            "title": summary.title,
+            "body": summary.body,
+            "body_html": summary.body_html,
+            "author": summary.author,
+            "report_url": summary.report_url,
+            "product_id": summary.product_id,
+            "raw_data": summary.raw_data,
+        }
+
+        result = client.table("weekly_reports").upsert(
+            report_data,
+            on_conflict="product_id"
+        ).execute()
+
+        if result.data and len(result.data) > 0:
+            print(f"  Saved weekly report: {summary.title} ({summary.report_date})")
+            return result.data[0]["id"]
+
+        return None
+
+    except Exception as e:
+        print(f"  Error saving weekly report: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def fetch_and_save_weekly_reports(client: Client) -> int:
+    """Fetch and save weekly summary reports. Returns count saved."""
+    print("\nChecking for weekly summaries...")
+    summaries_meta = get_weekly_summaries(limit=5)
+
+    if not summaries_meta:
+        print("  No weekly summaries found.")
+        return 0
+
+    print(f"  Found {len(summaries_meta)} summary product(s)")
+    saved = 0
+    for meta in summaries_meta:
+        product_id = meta.get('id')
+        if not product_id:
+            continue
+
+        print(f"  Fetching summary {product_id}...")
+        summary = parse_weekly_summary(product_id)
+        if summary:
+            report_id = save_weekly_report(client, summary)
+            if report_id:
+                saved += 1
+
+    print(f"  Saved {saved} weekly report(s)")
+    return saved
+
+
 def main():
     """Main entry point for the Supabase save script."""
     parser = argparse.ArgumentParser(description="Scrape CBAC forecasts and save to Supabase")
@@ -421,12 +483,6 @@ def main():
         else:
             print(f"Unknown zone: {zone}")
 
-    if not forecasts:
-        print("No forecasts found. Exiting.")
-        sys.exit(1)
-
-    print(f"   Scraped {len(forecasts)} forecast(s)")
-
     # Connect to Supabase
     print("\n2. Connecting to Supabase...")
     try:
@@ -436,18 +492,29 @@ def main():
         print(f"   Error connecting: {e}")
         sys.exit(1)
 
-    # Save forecasts
-    print("\n3. Saving forecasts to database...")
+    # Save daily forecasts (if any)
     saved_count = 0
-    for forecast in forecasts:
-        forecast_id = save_forecast(client, forecast)
-        if forecast_id:
-            saved_count += 1
+    if forecasts:
+        print(f"   Scraped {len(forecasts)} forecast(s)")
+        print("\n3. Saving forecasts to database...")
+        for forecast in forecasts:
+            forecast_id = save_forecast(client, forecast)
+            if forecast_id:
+                saved_count += 1
+        print(f"   Saved {saved_count}/{len(forecasts)} forecast(s)")
+    else:
+        print("   No daily forecasts found (likely off-season).")
 
-    print(f"\n4. Done! Saved {saved_count}/{len(forecasts)} forecast(s)")
+    # Always check for weekly summaries
+    print("\n4. Checking for weekly summaries...")
+    weekly_saved = fetch_and_save_weekly_reports(client)
 
-    if saved_count != len(forecasts):
-        print("   Some forecasts may have failed to save. Check logs above.")
+    # Summary
+    print(f"\n5. Done! Daily: {saved_count}, Weekly: {weekly_saved}")
+
+    # Only fail if daily forecasts were found but couldn't be saved
+    if forecasts and saved_count != len(forecasts):
+        print("   Some daily forecasts failed to save. Check logs above.")
         sys.exit(1)
 
 

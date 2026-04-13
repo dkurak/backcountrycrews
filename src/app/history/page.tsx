@@ -3,50 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ForecastRow } from '@/components/ForecastRow';
-import { getForecastsWithWeather, isSupabaseConfigured, DBForecast, DBAvalancheProblem, DBWeatherForecast } from '@/lib/supabase';
-import { Forecast, AvalancheProblem } from '@/types/forecast';
+import { getForecastsWithWeather, isSupabaseConfigured } from '@/lib/supabase';
+import { Forecast } from '@/types/forecast';
+import { convertForecast } from '@/lib/forecastAnalysis';
 import Link from 'next/link';
-
-// Convert DB format to frontend format
-function convertForecast(
-  dbForecast: DBForecast & { avalanche_problems: DBAvalancheProblem[] },
-  weather?: DBWeatherForecast
-): Forecast {
-  return {
-    id: dbForecast.id,
-    zone: dbForecast.zone_id as 'northwest' | 'southeast',
-    issue_date: dbForecast.issue_date,
-    valid_date: dbForecast.valid_date,
-    danger_alpine: dbForecast.danger_alpine as 1 | 2 | 3 | 4 | 5,
-    danger_treeline: dbForecast.danger_treeline as 1 | 2 | 3 | 4 | 5,
-    danger_below_treeline: dbForecast.danger_below_treeline as 1 | 2 | 3 | 4 | 5,
-    forecast_url: dbForecast.forecast_url || 'https://cbavalanchecenter.org/forecasts/',
-    problems: dbForecast.avalanche_problems.map((p): AvalancheProblem => ({
-      id: p.id,
-      type: p.problem_type as AvalancheProblem['type'],
-      aspect_elevation: p.aspect_elevation_rose || {
-        N: { alpine: false, treeline: false, below_treeline: false },
-        NE: { alpine: false, treeline: false, below_treeline: false },
-        E: { alpine: false, treeline: false, below_treeline: false },
-        SE: { alpine: false, treeline: false, below_treeline: false },
-        S: { alpine: false, treeline: false, below_treeline: false },
-        SW: { alpine: false, treeline: false, below_treeline: false },
-        W: { alpine: false, treeline: false, below_treeline: false },
-        NW: { alpine: false, treeline: false, below_treeline: false },
-      },
-      likelihood: (p.likelihood || 'Possible') as AvalancheProblem['likelihood'],
-      size: (p.size || 'D2') as AvalancheProblem['size'],
-    })),
-    weather: weather?.metrics ? {
-      temperature: weather.metrics.temperature,
-      cloud_cover: weather.metrics.cloud_cover,
-      wind_speed: weather.metrics.wind_speed,
-      wind_direction: weather.metrics.wind_direction,
-      snowfall_12hr: weather.metrics.snowfall_12hr,
-      snowfall_24hr: weather.metrics.snowfall_24hr,
-    } : undefined,
-  };
-}
 
 function HistoryPageContent() {
   const router = useRouter();

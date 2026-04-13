@@ -9,57 +9,12 @@ import { WeekAnalysis } from '@/components/WeekAnalysis';
 import { QuickTake } from '@/components/QuickTake';
 import { SkyIcon, WindIcon } from '@/components/WeatherIcons';
 import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
-import { getForecastsWithWeather, getWeather, isSupabaseConfigured, DBForecast, DBAvalancheProblem, DBWeatherForecast } from '@/lib/supabase';
+import { getForecastsWithWeather, getWeather, isSupabaseConfigured, isOffSeason, getLatestWeeklyReport, getSeasonBounds, DBForecast, DBAvalancheProblem, DBWeatherForecast, DBWeeklyReport, SeasonBounds } from '@/lib/supabase';
+import { OffSeasonView } from '@/components/OffSeasonView';
 import { mockForecasts } from '@/lib/mockData';
 import { DANGER_LABELS, Forecast, AvalancheProblem, ForecastTrend } from '@/types/forecast';
+import { convertForecast } from '@/lib/forecastAnalysis';
 import Link from 'next/link';
-
-// Convert DB format to frontend format
-function convertForecast(
-  dbForecast: DBForecast & { avalanche_problems: DBAvalancheProblem[] },
-  weather?: DBWeatherForecast
-): Forecast {
-  return {
-    id: dbForecast.id,
-    zone: dbForecast.zone_id as 'northwest' | 'southeast',
-    issue_date: dbForecast.issue_date,
-    valid_date: dbForecast.valid_date,
-    danger_alpine: dbForecast.danger_alpine as 1 | 2 | 3 | 4 | 5,
-    danger_treeline: dbForecast.danger_treeline as 1 | 2 | 3 | 4 | 5,
-    danger_below_treeline: dbForecast.danger_below_treeline as 1 | 2 | 3 | 4 | 5,
-    travel_advice: dbForecast.travel_advice || undefined,
-    forecast_url: dbForecast.forecast_url || 'https://cbavalanchecenter.org/forecasts/',
-    problems: dbForecast.avalanche_problems.map((p): AvalancheProblem => ({
-      id: p.id,
-      type: p.problem_type as AvalancheProblem['type'],
-      aspect_elevation: p.aspect_elevation_rose || {
-        N: { alpine: false, treeline: false, below_treeline: false },
-        NE: { alpine: false, treeline: false, below_treeline: false },
-        E: { alpine: false, treeline: false, below_treeline: false },
-        SE: { alpine: false, treeline: false, below_treeline: false },
-        S: { alpine: false, treeline: false, below_treeline: false },
-        SW: { alpine: false, treeline: false, below_treeline: false },
-        W: { alpine: false, treeline: false, below_treeline: false },
-        NW: { alpine: false, treeline: false, below_treeline: false },
-      },
-      likelihood: (p.likelihood || 'Possible') as AvalancheProblem['likelihood'],
-      size: (p.size || 'D2') as AvalancheProblem['size'],
-    })),
-    weather: weather?.metrics ? {
-      temperature: weather.metrics.temperature,
-      cloud_cover: weather.metrics.cloud_cover,
-      wind_speed: weather.metrics.wind_speed,
-      wind_direction: weather.metrics.wind_direction,
-      snowfall_12hr: weather.metrics.snowfall_12hr,
-      snowfall_24hr: weather.metrics.snowfall_24hr,
-    } : undefined,
-    trend: dbForecast.trend as ForecastTrend | undefined,
-    key_message: dbForecast.key_message || undefined,
-    confidence: dbForecast.confidence as 'low' | 'moderate' | 'high' | undefined,
-    recent_activity_summary: dbForecast.recent_activity_summary || undefined,
-    recent_avalanche_count: dbForecast.recent_avalanche_count || undefined,
-  };
-}
 
 function ConditionsTab({ selectedZone, days }: { selectedZone: 'northwest' | 'southeast'; days: 7 | 14 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -688,6 +643,27 @@ function ForecastContent() {
   const [selectedZone, setSelectedZone] = useState<'northwest' | 'southeast'>(initialZone);
   const [activeTab, setActiveTab] = useState<'conditions' | 'weather' | 'analysis7' | 'analysis14'>(initialTab as 'conditions' | 'weather' | 'analysis7' | 'analysis14');
 
+  // Off-season detection
+  const [offSeason, setOffSeason] = useState<boolean | null>(null);
+  const [weeklyReport, setWeeklyReport] = useState<DBWeeklyReport | null>(null);
+  const [seasonBounds, setSeasonBounds] = useState<SeasonBounds | null>(null);
+
+  useEffect(() => {
+    async function detectSeason() {
+      const isOff = await isOffSeason();
+      setOffSeason(isOff);
+      if (isOff) {
+        const [report, bounds] = await Promise.all([
+          getLatestWeeklyReport(),
+          getSeasonBounds(),
+        ]);
+        setWeeklyReport(report);
+        setSeasonBounds(bounds);
+      }
+    }
+    detectSeason();
+  }, []);
+
   const handleZoneChange = (zone: 'northwest' | 'southeast') => {
     setSelectedZone(zone);
     const params = new URLSearchParams();
@@ -703,6 +679,16 @@ function ForecastContent() {
     if (tab !== 'conditions') params.set('tab', tab);
     router.push(`/forecast?${params.toString()}`, { scroll: false });
   };
+
+  // Loading state for season detection
+  if (offSeason === null) {
+    return <div className="text-center py-12"><p className="text-gray-500">Loading...</p></div>;
+  }
+
+  // Off-season view
+  if (offSeason) {
+    return <OffSeasonView weeklyReport={weeklyReport} seasonBounds={seasonBounds} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -751,6 +737,12 @@ function ForecastContent() {
             {tab === 'conditions' ? 'Conditions' : tab === 'analysis7' ? '7-Day' : tab === 'analysis14' ? '14-Day' : 'Weather'}
           </button>
         ))}
+        <Link
+          href="/forecast/season"
+          className="px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Season
+        </Link>
       </div>
 
       {/* Tab content */}
