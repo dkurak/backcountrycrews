@@ -9,6 +9,8 @@ import { getTripsAwaitingResponse, getTripsWithPendingRequests, getUserNotificat
 import { getTripPath } from '@/lib/slugify';
 import { SECTION_FLAGS } from '@/lib/featureFlags';
 import { isOffSeason } from '@/lib/supabase';
+import { SeasonRecapBanner } from '@/components/SeasonRecapBanner';
+import { ActivityShowcase } from '@/components/ActivityShowcase';
 
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -181,6 +183,12 @@ export default function HomePage() {
         )}
       </div>
 
+      {/* Season recap banner (off-season only) */}
+      {offSeason && <SeasonRecapBanner />}
+
+      {/* Activity showcase grid */}
+      <ActivityShowcase offSeason={offSeason} />
+
       {/* Three large CTA buttons */}
       <div className="grid gap-4">
         {/* Check Forecast CTA */}
@@ -213,7 +221,7 @@ export default function HomePage() {
             }}
           >
             <div className="flex items-center gap-4">
-              <div className="text-4xl">⛷️</div>
+              <div className="text-4xl">{offSeason ? '🏔️' : '⛷️'}</div>
               <div className="flex-1">
                 <h2 className="text-xl font-bold">Post a Trip</h2>
                 <p style={{ color: colors.secondary.subtext }}>Plan your adventure and invite your crew</p>

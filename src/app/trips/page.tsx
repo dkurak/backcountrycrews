@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, getJoinedTripIds, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
@@ -310,7 +311,8 @@ function TourPostCard({ post, pendingCount, currentUserId, joinedTripIds }: { po
   );
 }
 
-export default function PartnersPage() {
+function TripsPageContent() {
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [allPosts, setAllPosts] = useState<TourPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -353,6 +355,14 @@ export default function PartnersPage() {
   useEffect(() => {
     getEnabledActivities().then(setEnabledActivities);
   }, []);
+
+  // Read ?activity= from URL and pre-select filter
+  useEffect(() => {
+    const activityParam = searchParams.get('activity');
+    if (activityParam && ACTIVITY_LABELS[activityParam as ActivityType]) {
+      setSelectedActivities(new Set([activityParam as ActivityType]));
+    }
+  }, [searchParams]);
 
   // Auto-expand the first (most recent) month when viewing past trips
   useEffect(() => {
@@ -795,5 +805,13 @@ export default function PartnersPage() {
         </ul>
       </div>
     </div>
+  );
+}
+
+export default function PartnersPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12"><p className="text-gray-500">Loading...</p></div>}>
+      <TripsPageContent />
+    </Suspense>
   );
 }
