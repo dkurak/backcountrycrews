@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { DBWeeklyReport, SeasonBounds } from '@/lib/supabase';
+import { SeasonRecapBanner } from '@/components/SeasonRecapBanner';
 
 interface OffSeasonViewProps {
   weeklyReport: DBWeeklyReport | null;
@@ -68,28 +69,8 @@ export function OffSeasonView({ weeklyReport, seasonBounds }: OffSeasonViewProps
         </div>
       )}
 
-      {/* Season summary CTA */}
-      {seasonBounds && (
-        <Link
-          href="/forecast/season"
-          className="block bg-white border border-gray-200 rounded-xl p-6 hover:border-gray-300 hover:shadow-sm transition-all"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">
-                {formatSeasonLabel(seasonBounds)} Summary
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatDate(seasonBounds.season_start)} &mdash; {formatDate(seasonBounds.season_end)}
-              </p>
-              <p className="text-sm text-gray-600 mt-2">
-                Danger trends, snowfall totals, problem types, and more from the full season.
-              </p>
-            </div>
-            <span className="text-2xl text-gray-400">&rarr;</span>
-          </div>
-        </Link>
-      )}
+      {/* Season recap banner */}
+      <SeasonRecapBanner />
 
       {/* Links */}
       <div className="flex flex-wrap gap-3">
