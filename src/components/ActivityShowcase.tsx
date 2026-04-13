@@ -76,13 +76,11 @@ export function ActivityShowcase({ offSeason }: ActivityShowcaseProps) {
             >
               <div className="text-2xl">{ACTIVITY_ICONS[activity]}</div>
               <div className="text-xs font-semibold mt-1">{ACTIVITY_LABELS[activity]}</div>
-              <div className="text-[10px] mt-0.5 opacity-70">
-                {muted
-                  ? 'Next winter'
-                  : count > 0
-                  ? `${count} trip${count !== 1 ? 's' : ''}`
-                  : 'Coming soon'}
-              </div>
+              {(muted || count > 0) && (
+                <div className="text-[10px] mt-0.5 opacity-70">
+                  {muted ? 'Next winter' : `${count} trip${count !== 1 ? 's' : ''}`}
+                </div>
+              )}
             </Link>
           );
         })}
