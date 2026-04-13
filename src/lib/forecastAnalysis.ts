@@ -54,10 +54,13 @@ export interface SeasonStats {
   seasonEnd: string;
   totalSnowfall: number;
   dangerDistribution: Record<number, number>; // danger level -> count of days
+  dangerByMonth: Record<number, Record<string, number>>; // danger level -> { '2026-01': count }
   avgDanger: number;
   peakDanger: { level: number; dates: string[] };
   peakDangerPeriod: { start: string; end: string; avgDanger: number } | null;
   problemFrequency: { type: string; label: string; count: number; percentage: number }[];
+  problemByMonth: Record<string, Record<string, number>>; // problem type -> { '2026-01': count }
+  months: string[]; // ordered list of month keys present in data
   windEventDays: number;
   notableStorms: { date: string; snowfall: number }[];
   coldClearDays: number;
@@ -73,10 +76,13 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
       seasonEnd: '',
       totalSnowfall: 0,
       dangerDistribution: {},
+      dangerByMonth: {},
       avgDanger: 0,
       peakDanger: { level: 0, dates: [] },
       peakDangerPeriod: null,
       problemFrequency: [],
+      problemByMonth: {},
+      months: [],
       windEventDays: 0,
       notableStorms: [],
       coldClearDays: 0,
@@ -98,8 +104,23 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
   const dates = Array.from(byDate.keys()).sort();
   const totalDays = dates.length;
 
+  // Collect all months present in data
+  const monthSet = new Set<string>();
+  for (const date of dates) {
+    const d = new Date(date + 'T12:00:00');
+    monthSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  const months = Array.from(monthSet).sort();
+
+  // Helper to get month key from date string
+  const getMonthKey = (date: string) => {
+    const d = new Date(date + 'T12:00:00');
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+
   // Danger distribution — use max danger across zones per day
   const dangerDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const dangerByMonth: Record<number, Record<string, number>> = {};
   const dailyMaxDangers: { date: string; danger: number }[] = [];
 
   for (const [date, dayForecasts] of byDate) {
@@ -108,6 +129,11 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
     );
     dangerDistribution[maxDanger] = (dangerDistribution[maxDanger] || 0) + 1;
     dailyMaxDangers.push({ date, danger: maxDanger });
+
+    // Monthly breakdown
+    const mk = getMonthKey(date);
+    if (!dangerByMonth[maxDanger]) dangerByMonth[maxDanger] = {};
+    dangerByMonth[maxDanger][mk] = (dangerByMonth[maxDanger][mk] || 0) + 1;
   }
 
   const avgDanger = dailyMaxDangers.reduce((sum, d) => sum + d.danger, 0) / totalDays;
@@ -211,17 +237,21 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
     }
   }
 
-  // Problem type frequency
+  // Problem type frequency + monthly breakdown
   const problemCounts = new Map<string, number>();
-  for (const [, dayForecasts] of byDate) {
+  const problemByMonth: Record<string, Record<string, number>> = {};
+  for (const [date, dayForecasts] of byDate) {
     const dayProblems = new Set<string>();
     for (const f of dayForecasts) {
       for (const p of f.problems) {
         dayProblems.add(p.type);
       }
     }
+    const mk = getMonthKey(date);
     for (const type of dayProblems) {
       problemCounts.set(type, (problemCounts.get(type) || 0) + 1);
+      if (!problemByMonth[type]) problemByMonth[type] = {};
+      problemByMonth[type][mk] = (problemByMonth[type][mk] || 0) + 1;
     }
   }
 
@@ -240,10 +270,13 @@ export function analyzeseason(forecasts: Forecast[]): SeasonStats {
     seasonEnd: dates[dates.length - 1],
     totalSnowfall: Math.round(totalSnowfall),
     dangerDistribution,
+    dangerByMonth,
     avgDanger: Math.round(avgDanger * 10) / 10,
     peakDanger: { level: maxLevel, dates: peakDangerDates },
     peakDangerPeriod: peakPeriod,
     problemFrequency,
+    problemByMonth,
+    months,
     windEventDays,
     notableStorms,
     coldClearDays,
