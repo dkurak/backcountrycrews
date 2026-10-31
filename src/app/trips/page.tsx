@@ -1,13 +1,15 @@
 'use client';
 
+import { ClipboardList, MountainSnow } from 'lucide-react';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, getJoinedTripIds, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getTourPosts, getTripsWithPendingRequests, getUserNotifications, deleteNotification, getJoinedTripIds, TourPost, TourFilters, ActivityType, UserNotification, ACTIVITY_LABELS, ACTIVITY_COLORS } from '@/lib/partners';
 import { getEnabledActivities } from '@/lib/featureFlags';
 import { getTripPath } from '@/lib/slugify';
 import { EXPERIENCE_LABELS } from '@/lib/constants';
+import { ActivityIcon } from '@/components/ActivityIcon';
 
 // Get the Monday of a week for a given date
 function getWeekStart(date: Date): Date {
@@ -201,7 +203,7 @@ function TourPostCard({ post, pendingCount, currentUserId, joinedTripIds }: { po
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${ACTIVITY_COLORS[activity]}`}>
-              <span>{ACTIVITY_ICONS[activity]}</span>
+              <span><ActivityIcon activity={activity} /></span>
               {ACTIVITY_LABELS[activity]}
             </span>
             <h3 className="font-semibold text-gray-900 truncate">{post.title}</h3>
@@ -491,7 +493,7 @@ function TripsPageContent() {
       </div>
 
       {/* Community invite banner */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-5 text-white">
+      <div className="bg-slate-900 rounded-xl p-5 text-white">
         <div className="flex flex-col gap-4">
           <div>
             <h3 className="font-semibold text-lg mb-1">Help Build Our Community</h3>
@@ -647,7 +649,7 @@ function TripsPageContent() {
                   }`}
                 >
                   <div className="flex items-center gap-1 text-xs font-medium">
-                    <span>{ACTIVITY_ICONS[activity]}</span>
+                    <span><ActivityIcon activity={activity} /></span>
                     <span>{ACTIVITY_LABELS[activity]}</span>
                   </div>
                   {count > 0 && <div className="text-lg font-bold">{count}</div>}
@@ -665,7 +667,9 @@ function TripsPageContent() {
         </div>
       ) : posts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="text-4xl mb-4">{showMyTrips ? '📋' : '⛷️'}</div>
+          {showMyTrips
+            ? <ClipboardList className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />
+            : <MountainSnow className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />}
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             {showMyTrips
               ? 'No trips yet'

@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getTourPost, updateTourPost, TourPost, ActivityType, ACTIVITY_LABELS, ACTIVITY_ICONS, ACTIVITY_COLORS } from '@/lib/partners';
+import { getTourPost, updateTourPost, TourPost, ActivityType, ACTIVITY_LABELS, ACTIVITY_COLORS } from '@/lib/partners';
 import { getTrailheads, Trailhead } from '@/lib/trailheads';
 import { parseSlugOrId, getTripPath } from '@/lib/slugify';
+import { ActivityIcon } from '@/components/ActivityIcon';
 
 const ALL_ACTIVITIES: ActivityType[] = ['ski_tour', 'offroad', 'mountain_bike', 'trail_run', 'hike', 'climb'];
 
@@ -218,7 +219,7 @@ export default function EditTripPage() {
                     : 'border-gray-200 hover:border-gray-300 text-gray-600'
                 }`}
               >
-                <span className="text-xl">{ACTIVITY_ICONS[act]}</span>
+                <ActivityIcon activity={act} className="h-5 w-5" />
                 <span className="text-xs font-medium">{ACTIVITY_LABELS[act]}</span>
               </button>
             ))}

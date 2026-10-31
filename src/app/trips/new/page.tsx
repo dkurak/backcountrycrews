@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { createTourPost, ActivityType, ACTIVITY_LABELS, ACTIVITY_ICONS, ACTIVITY_COLORS } from '@/lib/partners';
+import { createTourPost, ActivityType, ACTIVITY_LABELS, ACTIVITY_COLORS } from '@/lib/partners';
 import { getTrailheads, Trailhead } from '@/lib/trailheads';
 import { getEnabledActivities } from '@/lib/featureFlags';
 import { getTripPath } from '@/lib/slugify';
+import { ActivityIcon } from '@/components/ActivityIcon';
 
 const EXPERIENCE_LEVELS = [
   { value: '', label: 'Any level welcome' },
@@ -181,7 +182,7 @@ export default function NewTourPostPage() {
                     : 'border-gray-200 hover:border-gray-300 text-gray-600'
                 }`}
               >
-                <span className="text-xl">{ACTIVITY_ICONS[act]}</span>
+                <ActivityIcon activity={act} className="h-5 w-5" />
                 <span className="text-xs font-medium">{ACTIVITY_LABELS[act]}</span>
               </button>
             ))}

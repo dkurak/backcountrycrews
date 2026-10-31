@@ -1,5 +1,6 @@
 'use client';
 
+import { ExternalLink, Mountain, MountainSnow } from 'lucide-react';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DangerPyramid } from '@/components/DangerPyramid';
@@ -9,7 +10,7 @@ import { WeekAnalysis } from '@/components/WeekAnalysis';
 import { QuickTake } from '@/components/QuickTake';
 import { SkyIcon, WindIcon } from '@/components/WeatherIcons';
 import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
-import { getForecastsWithWeather, getWeather, isSupabaseConfigured, isOffSeason, getLatestWeeklyReport, getSeasonBounds, DBForecast, DBAvalancheProblem, DBWeatherForecast, DBWeeklyReport, SeasonBounds } from '@/lib/supabase';
+import { getForecastsWithWeather, getWeather, isSupabaseConfigured, getSeasonMode, getLatestWeeklyReport, getWeeklyReportsSince, getSeasonBounds, CURRENT_SEASON_START, DBForecast, DBAvalancheProblem, DBWeatherForecast, DBWeeklyReport, SeasonBounds, SeasonMode } from '@/lib/supabase';
 import { OffSeasonView } from '@/components/OffSeasonView';
 import { mockForecasts } from '@/lib/mockData';
 import { DANGER_LABELS, Forecast, AvalancheProblem, ForecastTrend } from '@/types/forecast';
@@ -130,7 +131,7 @@ function ConditionsTab({ selectedZone, days }: { selectedZone: 'northwest' | 'so
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
             >
-              <span className="text-2xl">⛰️</span>
+              <Mountain className="h-6 w-6 text-slate-500" aria-hidden="true" />
               <div className="flex-1">
                 <div className="text-sm font-semibold text-gray-900">Read Full Forecast on CBAC</div>
                 <div className="text-xs text-gray-500">Bottom line, forecast discussion &amp; complete details</div>
@@ -211,9 +212,9 @@ function ConditionsTab({ selectedZone, days }: { selectedZone: 'northwest' | 'so
       </div>
 
       {/* CBAC Card */}
-      <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-2xl">⛰️</div>
+          <Mountain className="h-6 w-6 text-slate-500" aria-hidden="true" />
           <div className="flex-1">
             <div className="font-semibold text-gray-900">Crested Butte Avalanche Center</div>
             <div className="text-sm text-gray-600">
@@ -257,17 +258,17 @@ function ConditionsTab({ selectedZone, days }: { selectedZone: 'northwest' | 'so
         href="https://nwcc-apps.sc.egov.usda.gov/awdb/site-plots/POR/WTEQ/CO/Butte.html"
         target="_blank"
         rel="noopener noreferrer"
-        className="block bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-4 hover:border-blue-300 transition-colors"
+        className="block bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="text-2xl">🏔️</div>
+          <MountainSnow className="h-6 w-6 text-slate-500" aria-hidden="true" />
           <div className="flex-1">
             <div className="font-semibold text-gray-900">Gunnison Basin Snowpack</div>
             <div className="text-sm text-gray-600">
               NRCS SNOTEL Snow Water Equivalent - Historical comparison chart
             </div>
           </div>
-          <div className="text-blue-500 text-sm font-medium">
+          <div className="text-sky-700 text-sm font-medium">
             View Chart
           </div>
         </div>
@@ -417,9 +418,9 @@ function WeatherTab({ selectedZone, days }: { selectedZone: 'northwest' | 'south
       )}
 
       {/* CBAC Card */}
-      <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-2xl">⛰️</div>
+          <Mountain className="h-6 w-6 text-slate-500" aria-hidden="true" />
           <div className="flex-1">
             <div className="font-semibold text-gray-900">Crested Butte Avalanche Center</div>
             <div className="text-sm text-gray-600">
@@ -595,9 +596,9 @@ function AnalysisTab({ selectedZone, days }: { selectedZone: 'northwest' | 'sout
       </div>
 
       {/* CBAC Card */}
-      <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center gap-3 mb-3">
-          <div className="text-2xl">⛰️</div>
+          <Mountain className="h-6 w-6 text-slate-500" aria-hidden="true" />
           <div className="flex-1">
             <div className="font-semibold text-gray-900">Crested Butte Avalanche Center</div>
             <div className="text-sm text-gray-600">
@@ -644,22 +645,24 @@ function ForecastContent() {
   const [activeTab, setActiveTab] = useState<'conditions' | 'weather' | 'analysis7' | 'analysis14'>(initialTab as 'conditions' | 'weather' | 'analysis7' | 'analysis14');
 
   // Off-season detection
-  const [offSeason, setOffSeason] = useState<boolean | null>(null);
-  const [weeklyReport, setWeeklyReport] = useState<DBWeeklyReport | null>(null);
+  const [seasonMode, setSeasonMode] = useState<SeasonMode | null>(null);
+  const [weeklyReports, setWeeklyReports] = useState<DBWeeklyReport[]>([]);
   const [seasonBounds, setSeasonBounds] = useState<SeasonBounds | null>(null);
 
   useEffect(() => {
     async function detectSeason() {
-      const isOff = await isOffSeason();
-      setOffSeason(isOff);
-      if (isOff) {
-        const [report, bounds] = await Promise.all([
-          getLatestWeeklyReport(),
+      const mode = await getSeasonMode();
+      if (mode !== 'active') {
+        const [reports, bounds] = await Promise.all([
+          mode === 'early'
+            ? getWeeklyReportsSince(CURRENT_SEASON_START)
+            : getLatestWeeklyReport().then((r) => (r ? [r] : [])),
           getSeasonBounds(),
         ]);
-        setWeeklyReport(report);
+        setWeeklyReports(reports);
         setSeasonBounds(bounds);
       }
+      setSeasonMode(mode);
     }
     detectSeason();
   }, []);
@@ -681,13 +684,13 @@ function ForecastContent() {
   };
 
   // Loading state for season detection
-  if (offSeason === null) {
+  if (seasonMode === null) {
     return <div className="text-center py-12"><p className="text-gray-500">Loading...</p></div>;
   }
 
   // Off-season view
-  if (offSeason) {
-    return <OffSeasonView weeklyReport={weeklyReport} seasonBounds={seasonBounds} />;
+  if (seasonMode !== 'active') {
+    return <OffSeasonView mode={seasonMode} reports={weeklyReports} seasonBounds={seasonBounds} />;
   }
 
   return (

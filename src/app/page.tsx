@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { useTheme } from '@/lib/theme';
 import { AvalancheWarningBanner } from '@/components/AvalancheWarningBanner';
-import { getTripsAwaitingResponse, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, UserNotification, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getTripsAwaitingResponse, getTripsWithPendingRequests, getUserNotifications, deleteNotification, TourPost, UserNotification, ACTIVITY_COLORS } from '@/lib/partners';
 import { getTripPath } from '@/lib/slugify';
 import { SECTION_FLAGS } from '@/lib/featureFlags';
-import { isOffSeason } from '@/lib/supabase';
+import { getSeasonMode, SeasonMode } from '@/lib/supabase';
 import { SeasonRecapBanner } from '@/components/SeasonRecapBanner';
-import { ActivityShowcase } from '@/components/ActivityShowcase';
+import { LatestForecastCard } from '@/components/LatestForecastCard';
+import { Bell, CalendarDays, PlusCircle } from 'lucide-react';
+import { ActivityIcon } from '@/components/ActivityIcon';
 
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -53,7 +54,7 @@ function UserNotificationCard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             ) : (
-              <span>{ACTIVITY_ICONS[activity]}</span>
+              <span><ActivityIcon activity={activity} /></span>
             )}
           </span>
           <div className="flex-1 min-w-0 pr-6">
@@ -89,7 +90,7 @@ function TripNotificationCard({ trip, badge }: { trip: TourPost; badge: { text: 
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-lg ${ACTIVITY_COLORS[activity]}`}>
-            {ACTIVITY_ICONS[activity]}
+            <ActivityIcon activity={activity} />
           </span>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -125,11 +126,10 @@ function TripNotificationCard({ trip, badge }: { trip: TourPost; badge: { text: 
 
 export default function HomePage() {
   const { user, profile, loading: authLoading } = useAuth();
-  const { colors } = useTheme();
   const [awaitingResponse, setAwaitingResponse] = useState<TourPost[]>([]);
   const [needsAttention, setNeedsAttention] = useState<TourPost[]>([]);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [offSeason, setOffSeason] = useState(false);
+  const [seasonMode, setSeasonMode] = useState<SeasonMode | null>(null);
 
   // Load user's notifications when logged in
   useEffect(() => {
@@ -148,9 +148,9 @@ export default function HomePage() {
     loadNotifications();
   }, [user]);
 
-  // Detect off-season for CTA text
+  // Detect season for CTA layout
   useEffect(() => {
-    isOffSeason().then(setOffSeason);
+    getSeasonMode().then(setSeasonMode);
   }, []);
 
   const handleDismissNotification = (id: string) => {
@@ -164,142 +164,40 @@ export default function HomePage() {
       {/* Avalanche Warning Banner - shows for all zones */}
       <AvalancheWarningBanner />
 
-      {/* Hero section with greeting */}
-      <div className="text-center py-6">
-        {!authLoading && user && profile ? (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Hey, {profile.display_name || 'there'}!
-            </h1>
-            <p className="text-gray-500">What are you looking for today?</p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to Backcountry Crews
-            </h1>
-            <p className="text-gray-500">Plan your trip. Invite your crew. Get out there.</p>
-          </>
-        )}
+      {/* Greeting */}
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          {!authLoading && user && profile
+            ? `Hey, ${profile.display_name || 'there'}`
+            : 'Backcountry Crews'}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          {!authLoading && user && profile
+            ? 'Conditions first, then plans.'
+            : 'Ski touring conditions and partners in Crested Butte.'}
+        </p>
       </div>
 
-      {/* Season recap banner (off-season only) */}
-      {offSeason && <SeasonRecapBanner />}
+      {/* Latest forecast: the primary focus */}
+      {seasonMode && <LatestForecastCard mode={seasonMode} />}
 
-      {/* Activity showcase grid */}
-      <ActivityShowcase offSeason={offSeason} />
-
-      {/* CTA cards — seasonal layout */}
-      {offSeason ? (
-        <div className="grid gap-4">
-          {/* Ready for Summer */}
-          {SECTION_FLAGS.trips && (
-            <div className="rounded-2xl p-6 shadow-lg bg-gradient-to-r from-emerald-600 to-teal-700 text-white">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="text-4xl">&#x2600;&#xFE0F;</div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">Ready for Summer</h2>
-                  <p className="text-emerald-100">Plan your next adventure with your crew</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Link
-                  href={user ? "/trips/new" : "/login"}
-                  className="flex-1 text-center px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
-                >
-                  Post a Trip
-                </Link>
-                <Link
-                  href="/trips"
-                  className="flex-1 text-center px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
-                >
-                  Browse Trips
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Off-Season Update */}
+      {/* Secondary actions */}
+      {SECTION_FLAGS.trips && (
+        <div className="grid grid-cols-2 gap-3">
           <Link
-            href="/forecast"
-            className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-            style={{
-              background: `linear-gradient(to right, ${colors.primary.from}, ${colors.primary.to})`,
-              color: colors.primary.text,
-            }}
+            href={user ? '/trips/new' : '/login'}
+            className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
           >
-            <div className="flex items-center gap-4">
-              <div className="text-4xl">&#x1F3D4;&#xFE0F;</div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold">Off-Season Update</h2>
-                <p style={{ color: colors.primary.subtext }}>Weekly CBAC conditions report</p>
-              </div>
-              <div className="text-2xl">&rarr;</div>
-            </div>
+            <PlusCircle className="h-5 w-5 text-slate-500" aria-hidden="true" />
+            <span className="text-sm font-medium text-slate-900">Post a trip</span>
           </Link>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {/* Check Forecast CTA */}
           <Link
-            href="/forecast"
-            className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-            style={{
-              background: `linear-gradient(to right, ${colors.primary.from}, ${colors.primary.to})`,
-              color: colors.primary.text,
-            }}
+            href="/trips"
+            className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
           >
-            <div className="flex items-center gap-4">
-              <div className="text-4xl">&#x1F3D4;&#xFE0F;</div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold">Check Forecast</h2>
-                <p style={{ color: colors.primary.subtext }}>Avalanche conditions and weather</p>
-              </div>
-              <div className="text-2xl">&rarr;</div>
-            </div>
+            <CalendarDays className="h-5 w-5 text-slate-500" aria-hidden="true" />
+            <span className="text-sm font-medium text-slate-900">Browse trips</span>
           </Link>
-
-          {/* Post a Trip CTA */}
-          {SECTION_FLAGS.trips && (
-            <Link
-              href={user ? "/trips/new" : "/login"}
-              className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-              style={{
-                background: `linear-gradient(to right, ${colors.secondary.from}, ${colors.secondary.to})`,
-                color: colors.secondary.text,
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <div className="text-4xl">&#x26F7;&#xFE0F;</div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">Post a Trip</h2>
-                  <p style={{ color: colors.secondary.subtext }}>Plan your adventure and invite your crew</p>
-                </div>
-                <div className="text-2xl">&rarr;</div>
-              </div>
-            </Link>
-          )}
-
-          {/* Browse Trips CTA */}
-          {SECTION_FLAGS.trips && (
-            <Link
-              href="/trips"
-              className="block rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01]"
-              style={{
-                background: `linear-gradient(to right, ${colors.tertiary.from}, ${colors.tertiary.to})`,
-                color: colors.tertiary.text,
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <div className="text-4xl">&#x1F5D3;&#xFE0F;</div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">Browse Trips</h2>
-                  <p style={{ color: colors.tertiary.subtext }}>Find upcoming adventures near you</p>
-                </div>
-                <div className="text-2xl">&rarr;</div>
-              </div>
-            </Link>
-          )}
         </div>
       )}
 
@@ -350,7 +248,7 @@ export default function HomePage() {
           {needsAttention.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">🔔</span>
+                <Bell className="h-5 w-5 text-amber-700" aria-hidden="true" />
                 <h3 className="font-semibold text-amber-900">Needs Your Attention</h3>
               </div>
               <div className="space-y-2">
@@ -418,7 +316,7 @@ export default function HomePage() {
 
       {/* Invite friends banner for logged-in users */}
       {!authLoading && user && (
-        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-5 text-white">
+        <div className="bg-slate-900 rounded-xl p-5 text-white">
           <div className="flex flex-col gap-4">
             <div>
               <h3 className="font-semibold text-lg mb-1">Help Build Our Community</h3>
@@ -461,6 +359,9 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Last season's recap, until daily forecasts resume */}
+      {seasonMode && seasonMode !== 'active' && <SeasonRecapBanner />}
     </div>
   );
 }

@@ -27,13 +27,13 @@ import {
   TripReport,
   ACTIVITY_LABELS,
   ACTIVITY_COLORS,
-  ACTIVITY_ICONS,
-} from '@/lib/partners';
+  } from '@/lib/partners';
 import { parseSlugOrId, getTripPath } from '@/lib/slugify';
 import { ExperienceIcon } from '@/components/ExperienceIcon';
 import { ExperienceLevel, EXPERIENCE_LABELS } from '@/lib/constants';
 import { AttendanceModal } from '@/components/AttendanceModal';
 import { TripReportForm } from '@/components/TripReportForm';
+import { ActivityIcon } from '@/components/ActivityIcon';
 
 function InviteSection({ tripSlug, tripTitle, tripDate }: { tripSlug: string; tripTitle: string; tripDate: string }) {
   const [copied, setCopied] = useState(false);
@@ -68,7 +68,7 @@ function InviteSection({ tripSlug, tripTitle, tripDate }: { tripSlug: string; tr
   );
 
   return (
-    <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-5 text-white">
+    <div className="bg-slate-900 rounded-xl p-5 text-white">
       <div className="flex flex-col gap-4">
         <div>
           <h3 className="font-semibold text-lg mb-1">Invite Your Crew</h3>
@@ -439,7 +439,7 @@ export default function TourPostPage() {
           <div>
             <div className="flex items-center gap-3 mb-1 flex-wrap">
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium ${ACTIVITY_COLORS[post.activity || 'ski_tour']}`}>
-                <span>{ACTIVITY_ICONS[post.activity || 'ski_tour']}</span>
+                <span><ActivityIcon activity={post.activity || 'ski_tour'} /></span>
                 {ACTIVITY_LABELS[post.activity || 'ski_tour']}
               </span>
               <h1 className="text-2xl font-bold text-gray-900">{post.title}</h1>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Mountain } from 'lucide-react';
 import { Forecast, AvalancheProblem, DANGER_LABELS, ForecastWeather, ForecastTrend, TREND_LABELS, TREND_COLORS } from '@/types/forecast';
 import { DangerPyramid } from './DangerPyramid';
 import { AspectRose } from './AspectRose';
@@ -373,7 +374,7 @@ export function ForecastRow({ forecast, previousForecast, weekForecasts, expande
             rel="noopener noreferrer"
             className="mb-4 flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
           >
-            <span className="text-lg">⛰️</span>
+            <Mountain className="h-5 w-5 text-slate-500" aria-hidden="true" />
             <div className="flex-1">
               <div className="text-sm font-medium text-gray-900">Read Full Forecast</div>
               <div className="text-xs text-gray-500">Bottom line, discussion &amp; details on CBAC</div>
@@ -432,7 +433,7 @@ export function ForecastRow({ forecast, previousForecast, weekForecasts, expande
                     }`}
                   >
                     <div className="flex items-start gap-2">
-                      <span>{insight.icon}</span>
+                      <insight.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-500" aria-hidden="true" />
                       <div>
                         <div className="font-medium text-gray-900">{insight.title}</div>
                         <div className="text-xs text-gray-600 mt-0.5">{insight.detail}</div>

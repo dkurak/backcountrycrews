@@ -1,9 +1,11 @@
 'use client';
 
+import { Inbox, MailOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { getUserNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, UserNotification, ACTIVITY_COLORS, ACTIVITY_ICONS } from '@/lib/partners';
+import { getUserNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification, UserNotification, ACTIVITY_COLORS } from '@/lib/partners';
+import { ActivityIcon } from '@/components/ActivityIcon';
 
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -63,7 +65,7 @@ function NotificationCard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
               </svg>
             ) : (
-              <span>{ACTIVITY_ICONS[activity]}</span>
+              <span><ActivityIcon activity={activity} /></span>
             )}
           </span>
           <div className="flex-1 min-w-0">
@@ -211,9 +213,9 @@ export default function NotificationsPage() {
         </div>
       ) : notifications.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="text-4xl mb-4">
-            {activeTab === 'new' ? '📭' : '📬'}
-          </div>
+          {activeTab === 'new'
+            ? <MailOpen className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />
+            : <Inbox className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />}
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             {activeTab === 'new' ? 'No new notifications' : 'No notifications yet'}
           </h3>

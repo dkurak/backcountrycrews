@@ -209,7 +209,7 @@ export function ForecastChat() {
       {/* Floating button */}
       <button
         onClick={() => setIsOpen(p => !p)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-slate-900 hover:bg-slate-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
         aria-label={isOpen ? 'Close forecast assistant' : 'Open forecast assistant'}
       >
         {isOpen ? (

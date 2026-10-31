@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleAlert, CircleCheck, Snowflake, Sun, Thermometer, ThermometerSnowflake, TrendingDown, TrendingUp, TriangleAlert, Wind, type LucideIcon } from 'lucide-react';
 import { Forecast } from '@/types/forecast';
 
 interface WeekAnalysisProps {
@@ -9,7 +10,7 @@ interface WeekAnalysisProps {
 
 export interface AnalysisInsight {
   type: 'snow' | 'wind' | 'temp' | 'danger' | 'problem' | 'stability';
-  icon: string;
+  icon: LucideIcon;
   title: string;
   detail: string;
   sentiment: 'positive' | 'negative' | 'neutral';
@@ -90,7 +91,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (totalSnow > 0) {
     insights.push({
       type: 'snow',
-      icon: '❄️',
+      icon: Snowflake,
       title: `${totalSnow}" in the last ${week.length} days`,
       detail: totalSnow >= 12
         ? 'Significant loading on the snowpack. New and wind slabs likely.'
@@ -102,7 +103,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   } else {
     insights.push({
       type: 'snow',
-      icon: '☀️',
+      icon: Sun,
       title: 'Dry spell continues',
       detail: `${daysSinceSnow}+ days without significant snowfall. Slopes are adjusting but surface conditions may be deteriorating.`,
       sentiment: 'neutral',
@@ -113,7 +114,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (windDays >= 3) {
     insights.push({
       type: 'wind',
-      icon: '💨',
+      icon: Wind,
       title: `${windDays} days of notable wind`,
       detail: 'Persistent wind loading has formed slabs on lee aspects. Cross-loaded features may hold stubborn slabs.',
       sentiment: 'negative',
@@ -121,7 +122,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   } else if (windDays > 0 && hadWindSlab) {
     insights.push({
       type: 'wind',
-      icon: '💨',
+      icon: Wind,
       title: 'Recent wind event',
       detail: 'Wind slabs formed on lee terrain. These typically become stubborn to trigger but persist due to poor bonding.',
       sentiment: 'negative',
@@ -132,7 +133,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (coldClearDays >= 3) {
     insights.push({
       type: 'temp',
-      icon: '🥶',
+      icon: ThermometerSnowflake,
       title: `${coldClearDays} cold, clear days`,
       detail: 'Extended cold/clear conditions promote faceting (weak layer formation) on shaded aspects. Near-surface facets may become a future problem.',
       sentiment: 'negative',
@@ -143,7 +144,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (warmingTrend) {
     insights.push({
       type: 'temp',
-      icon: '🌡️',
+      icon: Thermometer,
       title: 'Warming trend',
       detail: 'Temperatures rising. Gradual warming can help stabilize the snowpack, but rapid warming increases wet avalanche concern.',
       sentiment: 'neutral',
@@ -151,7 +152,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   } else if (coolingTrend) {
     insights.push({
       type: 'temp',
-      icon: '🌡️',
+      icon: Thermometer,
       title: 'Cooling trend',
       detail: 'Temperatures dropping. Cold temps slow stabilization and promote faceting on shaded slopes.',
       sentiment: 'neutral',
@@ -162,7 +163,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (dangerDecreased) {
     insights.push({
       type: 'danger',
-      icon: '📉',
+      icon: TrendingDown,
       title: 'Danger trending down',
       detail: 'Avalanche danger has decreased over the period. Snowpack is adjusting, but isolated pockets of instability may persist.',
       sentiment: 'positive',
@@ -170,7 +171,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   } else if (dangerIncreased) {
     insights.push({
       type: 'danger',
-      icon: '📈',
+      icon: TrendingUp,
       title: 'Danger increased',
       detail: 'Avalanche danger has risen. Recent loading or weather changes have stressed the snowpack.',
       sentiment: 'negative',
@@ -181,7 +182,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (hadPersistentSlab && currentProblems.has('persistent_slab')) {
     insights.push({
       type: 'problem',
-      icon: '⚠️',
+      icon: TriangleAlert,
       title: 'Persistent slab ongoing',
       detail: 'Persistent slab problems remain active. These can produce large avalanches with low probability triggers. Give suspect slopes extra margin.',
       sentiment: 'negative',
@@ -193,7 +194,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   if (avgDanger <= 1.5 && totalSnow < 3 && windDays < 2) {
     insights.push({
       type: 'stability',
-      icon: '✅',
+      icon: CircleCheck,
       title: 'Generally stable conditions',
       detail: 'Low danger with minimal recent loading. Good conditions for conservative terrain choices. Always assess local conditions.',
       sentiment: 'positive',
@@ -201,7 +202,7 @@ export function analyzeWeek(forecasts: Forecast[], days = 7): AnalysisInsight[] 
   } else if (avgDanger >= 3) {
     insights.push({
       type: 'stability',
-      icon: '🔴',
+      icon: CircleAlert,
       title: 'Elevated instability',
       detail: 'Sustained higher danger levels. Natural and human-triggered avalanches have been occurring. Careful terrain selection essential.',
       sentiment: 'negative',
@@ -238,7 +239,7 @@ export function WeekAnalysis({ forecasts, days = 7 }: WeekAnalysisProps) {
             }`}
           >
             <div className="flex items-start gap-2">
-              <span className="text-lg">{insight.icon}</span>
+              <insight.icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-slate-500" aria-hidden="true" />
               <div>
                 <div className="font-medium text-gray-900">{insight.title}</div>
                 <div className="text-sm text-gray-600 mt-0.5">{insight.detail}</div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Star } from 'lucide-react';
 import { useState } from 'react';
 import { ActivityType, TripReport } from '@/lib/partners';
 
@@ -62,9 +63,9 @@ export function TripReportForm({ activity, existingReport, onSave, onCancel }: T
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className="text-3xl focus:outline-none transition-transform hover:scale-110"
+                  className="focus:outline-none" aria-label={`${star} star${star > 1 ? 's' : ''}`}
                 >
-                  {star <= rating ? '⭐' : '☆'}
+                  <Star className={`h-8 w-8 ${star <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} aria-hidden="true" />
                 </button>
               ))}
             </div>

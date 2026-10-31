@@ -1,5 +1,6 @@
 'use client';
 
+import { Mail, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
@@ -178,12 +179,12 @@ export default function PartnersPage() {
       </div>
 
       {/* Invite a Friend CTA */}
-      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-5">
+      <div className="bg-white border border-slate-200 rounded-xl p-5">
         <div className="flex items-start gap-4">
-          <span className="text-3xl">📨</span>
+          <Mail className="h-6 w-6 text-slate-500 flex-shrink-0" aria-hidden="true" />
           <div className="flex-1">
-            <h3 className="font-semibold text-teal-900 mb-1">Already have a crew in mind?</h3>
-            <p className="text-sm text-teal-700 mb-3">
+            <h3 className="font-semibold text-slate-900 mb-1">Already have a crew in mind?</h3>
+            <p className="text-sm text-slate-600 mb-3">
               Post a trip and share the link directly with your friends. No need to wait for them to sign up first.
             </p>
             <Link
@@ -252,7 +253,7 @@ export default function PartnersPage() {
         </div>
       ) : filteredPartners.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
-          <div className="text-4xl mb-4">🔍</div>
+          <Search className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No partners found</h3>
           <p className="text-gray-500 mb-4">
             {selectedZone || selectedExperience.size > 0

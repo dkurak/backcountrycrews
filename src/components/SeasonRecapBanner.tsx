@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ArrowRight, BarChart3 } from 'lucide-react';
 import { getSeasonBounds, SeasonBounds } from '@/lib/supabase';
 
 function formatSeasonLabel(bounds: SeasonBounds): string {
@@ -31,16 +32,14 @@ export function SeasonRecapBanner() {
   return (
     <Link
       href="/forecast/season"
-      className="block rounded-2xl p-5 transition-all shadow-lg hover:shadow-xl hover:scale-[1.01] bg-gradient-to-r from-slate-700 via-blue-800 to-sky-500"
+      className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-slate-300"
     >
-      <div className="flex items-center gap-4">
-        <div className="text-3xl">&#x26F7;&#xFE0F;</div>
-        <div className="flex-1">
-          <h2 className="text-lg font-bold text-white">{seasonLabel} Ski Season Recap</h2>
-          <p className="text-sm text-blue-200">Danger trends, snowfall totals, and the full season breakdown</p>
-        </div>
-        <div className="text-2xl text-white/70">&rarr;</div>
+      <BarChart3 className="h-5 w-5 flex-shrink-0 text-slate-500" aria-hidden="true" />
+      <div className="flex-1">
+        <p className="text-sm font-medium text-slate-900">{seasonLabel} season recap</p>
+        <p className="text-xs text-slate-500">Danger trends, snowfall totals, and the full season breakdown</p>
       </div>
+      <ArrowRight className="h-4 w-4 text-slate-400" aria-hidden="true" />
     </Link>
   );
 }

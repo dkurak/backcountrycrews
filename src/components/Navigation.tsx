@@ -48,7 +48,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-gray-900 text-white">
+    <nav className="bg-slate-900 text-white">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="flex items-center">

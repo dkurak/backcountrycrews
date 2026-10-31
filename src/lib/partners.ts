@@ -25,23 +25,16 @@ export const ACTIVITY_LABELS: Record<ActivityType, string> = {
   climb: 'Climb',
 };
 
+// Neutral chips: activity is identified by its icon and label, not color.
 export const ACTIVITY_COLORS: Record<ActivityType, string> = {
-  ski_tour: 'bg-slate-200 text-slate-700',
-  offroad: 'bg-amber-200 text-amber-800',
-  mountain_bike: 'bg-teal-200 text-teal-800',
-  trail_run: 'bg-violet-200 text-violet-800',
-  hike: 'bg-stone-200 text-stone-700',
-  climb: 'bg-rose-200 text-rose-800',
+  ski_tour: 'bg-slate-100 text-slate-700',
+  offroad: 'bg-slate-100 text-slate-700',
+  mountain_bike: 'bg-slate-100 text-slate-700',
+  trail_run: 'bg-slate-100 text-slate-700',
+  hike: 'bg-slate-100 text-slate-700',
+  climb: 'bg-slate-100 text-slate-700',
 };
 
-export const ACTIVITY_ICONS: Record<ActivityType, string> = {
-  ski_tour: '⛷️',
-  offroad: '🛻',
-  mountain_bike: '🚵',
-  trail_run: '🏃',
-  hike: '🥾',
-  climb: '🧗',
-};
 
 // Trip Report Types
 export interface SkiTourConditions {

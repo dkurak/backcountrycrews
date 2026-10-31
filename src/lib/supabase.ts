@@ -327,26 +327,77 @@ export async function listSeasons(): Promise<SeasonInfo[]> {
   return withTimeout(fetchData(), 20000, [])
 }
 
-// Determine if we're in off-season (last daily forecast > 7 days ago)
-export async function isOffSeason(): Promise<boolean> {
-  if (!supabase) return false
+// Start of the current winter season. CBAC's first fall weekly summary was
+// published this day; update it when a new season begins.
+export const CURRENT_SEASON_START = '2026-10-12'
+export const CURRENT_SEASON_LABEL = '2026-27'
+
+// 'active'  - CBAC is publishing daily forecasts (last one within 7 days)
+// 'early'   - no daily forecasts yet, but weekly summaries since the season start
+// 'off'     - neither (summer)
+export type SeasonMode = 'active' | 'early' | 'off'
+
+const DAY_MS = 1000 * 60 * 60 * 24
+const EARLY_SEASON_MAX_GAP_DAYS = 21
+
+export async function getSeasonMode(): Promise<SeasonMode> {
+  if (!supabase) return 'active'
+
+  const fetchData = async (): Promise<SeasonMode> => {
+    const [forecastResult, reportResult] = await Promise.all([
+      supabase
+        .from('forecasts')
+        .select('valid_date')
+        .order('valid_date', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('weekly_reports')
+        .select('report_date')
+        .gte('report_date', CURRENT_SEASON_START)
+        .order('report_date', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
+
+    const lastForecast = forecastResult.data?.valid_date
+    if (lastForecast) {
+      const daysSince = (Date.now() - new Date(lastForecast).getTime()) / DAY_MS
+      if (daysSince <= 7) return 'active'
+    }
+
+    const lastReport = reportResult.data?.report_date
+    if (lastReport) {
+      const daysSince = (Date.now() - new Date(lastReport).getTime()) / DAY_MS
+      if (daysSince <= EARLY_SEASON_MAX_GAP_DAYS) return 'early'
+    }
+
+    return 'off'
+  }
+
+  return withTimeout(fetchData(), 20000, 'active')
+}
+
+// Fetch weekly reports published on or after a date, newest first
+export async function getWeeklyReportsSince(sinceDate: string): Promise<DBWeeklyReport[]> {
+  if (!supabase) return []
 
   const fetchData = async () => {
     const { data, error } = await supabase
-      .from('forecasts')
-      .select('valid_date')
-      .order('valid_date', { ascending: false })
-      .limit(1)
-      .single()
+      .from('weekly_reports')
+      .select('*')
+      .gte('report_date', sinceDate)
+      .order('report_date', { ascending: false })
 
-    if (error || !data) return true
+    if (error) {
+      console.error('Error fetching weekly reports:', error)
+      return []
+    }
 
-    const lastDate = new Date(data.valid_date)
-    const daysSince = (Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-    return daysSince > 7
+    return (data || []) as DBWeeklyReport[]
   }
 
-  return withTimeout(fetchData(), 20000, false)
+  return withTimeout(fetchData(), 20000, [])
 }
 
 // Fetch all forecasts within a season range (for season summary)
